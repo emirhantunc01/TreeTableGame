@@ -23,10 +23,10 @@ public class Item {
 
     public void draw() {
         if (type == '@') {
-            // Paketlenmiş Ateş Topu (Packed Fireball)
+            // Packed Fireball
             cn.getTextWindow().output(x, y, type, colorFireball);
         } else {
-            // Mantık Sembolleri (Logic Symbols)
+            // Logic Symbols
             cn.getTextWindow().output(x, y, type, colorSymbol);
         }
     }

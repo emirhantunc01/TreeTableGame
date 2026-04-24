@@ -22,11 +22,11 @@ public class Item {
     }
 
     public void draw() {
+        if (x < 0 || y < 0) return;
+
         if (type == '@') {
-            // Packed Fireball
             cn.getTextWindow().output(x, y, type, colorFireball);
         } else {
-            // Logic Symbols
             cn.getTextWindow().output(x, y, type, colorSymbol);
         }
     }

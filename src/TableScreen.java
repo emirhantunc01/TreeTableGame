@@ -189,7 +189,7 @@ public class TableScreen {
             if (isHidden[i]) {
                 ConsoleUtils.printString(cn, 9, 4 + i, "?", colorHidden);
             } else {
-                ConsoleUtils.printString(cn, 9, 4 + i, String.valueOf(truthTable[i][4]), colorNormal);
+                ConsoleUtils.printString(cn, 9, 4 + i, String.valueOf(truthTable[i][4]),    colorNormal);
             }
         }
     }

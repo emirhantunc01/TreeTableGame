@@ -27,6 +27,13 @@ public class Robot {
         this.isTargeted = rnd.nextBoolean(); // 50% chance
     }
 
+    public Robot(Console cn, int startX, int startY, boolean isTargeted) {
+        this.cn = cn;
+        this.x = startX;
+        this.y = startY;
+        this.isTargeted = isTargeted;
+    }
+
     public void move(Item[] items, int itemCount, Robot[] robots, int robotCount) {
         if (!isAlive) return;
 

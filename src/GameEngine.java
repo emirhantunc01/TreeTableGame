@@ -256,14 +256,16 @@ public class GameEngine {
             ry = rnd.nextInt(Maze.ROWS - 2) + 1;
         } while (Maze.map[ry][rx] == '#' || hasEntityAt(rx, ry)); // Wall or another entity?
 
-        if (type == 'X') {
+        if (type == 'R' || type == 'G') {
             if (robotCount < robots.length) {
-                robots[robotCount] = new Robot(cn, rx, ry);
+                robots[robotCount] = new Robot(cn, rx, ry, type == 'R');
+                robots[robotCount].draw(); // MUST draw the newly created robot immediately
                 robotCount++;
             }
         } else {
             if (itemCount < items.length) {
                 items[itemCount] = new Item(rx, ry, type, cn);
+                items[itemCount].draw(); // MUST draw the newly created item immediately
                 itemCount++;
             }
         }
@@ -282,27 +284,19 @@ public class GameEngine {
     }
 
     // Checks whether the player stepped on an item
+    // Düzeltilmiş checkItemCollection() metodu:
     private void checkItemCollection() {
         for (int i = 0; i < itemCount; i++) {
             if (items[i].getType() != ' ' && items[i].getX() == player.getX() && items[i].getY() == player.getY()) {
 
-                char type = items[i].getType();
-                if (type == '@') {
+                if (items[i].getType() == '@') {
                     fireballManager.addPacked();
                 } else {
-                    // collectSymbol artık null veya sembol döndürüyor
-                    Character toPlaceInTree = player.collectSymbol(type);
-                    if (toPlaceInTree != null) {
-                        // tree'ye eklemeyi dene; başarısız olursa (ör. dolu slot) sembolü backpack'e geri koymayı deneyebilirsin
-                        boolean placed = treeScreen.placeSymbol(toPlaceInTree);
-                        if (!placed) {
-                            // Eğer ağaçta yer yoksa çantaya koymayı dene; başarısızsa item kaybolur (veya başka politika uygulanır)
-                            player.addToBackpack(toPlaceInTree);
-                        }
-                    }
+                    player.collectSymbol(items[i].getType());
                 }
 
-                items[i] = new Item(-1, -1, ' ', cn); // Toplanan eşyayı oyundan sil (Dummy item yap)
+                items[i].erase(); // ← EKLE: Önce ekrandan sil
+                items[i] = new Item(-1, -1, ' ', cn); // Sonra dummy item yap
             }
         }
     }

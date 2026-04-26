@@ -111,7 +111,8 @@ public class InputQueue {
         } else if (roll < 9) {
             return '@';
         } else {
-            return 'X';
+            // 50% chance for Red (Targeted) or Green (Random) robot
+            return rnd.nextBoolean() ? 'R' : 'G';
         }
     }
 
@@ -128,7 +129,10 @@ public class InputQueue {
             TextAttributes color;
 
             if (c == '@') color = colorFireball;
-            else if (c == 'X') color = colorRobot;
+            else if (c == 'R' || c == 'G') {
+                color = colorRobot;
+                c = 'X'; // Display as X but track type internally as R (red) or G (green)
+            }
             else color = colorSymbol;
 
             cn.getTextWindow().output(drawX + 4, drawY + 1 + i, c, color);

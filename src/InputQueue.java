@@ -11,7 +11,7 @@ import java.util.Random;
 public class InputQueue {
     public static final int QUEUE_CAPACITY = 10;
 
-    // Ders notlarındaki Circular Queue değişkenleri
+    // Circular Queue variables from course notes
     private int front;
     private int rear;
     private Character[] elements;
@@ -32,18 +32,18 @@ public class InputQueue {
     public InputQueue(Console cn) {
         this.cn = cn;
 
-        // Ders notlarındaki Constructor (Slayt 14)
+        // Constructor from course notes (Slide 14)
         elements = new Character[QUEUE_CAPACITY];
         rear = -1;
         front = 0;
 
-        // Oyun başladığında kuyruğu tamamen doldur
+        // Fill the queue completely at game start
         for (int i = 0; i < QUEUE_CAPACITY; i++) {
             enqueue(generateRandomElement());
         }
     }
 
-    // --- DERS NOTLARINDAKİ CIRCULAR QUEUE METOTLARI ---
+    // --- CIRCULAR QUEUE METHODS FROM COURSE NOTES ---
 
     public boolean isEmpty() {
         return elements[front] == null;
@@ -73,8 +73,8 @@ public class InputQueue {
             elements[front] = null;
             front = (front + 1) % elements.length;
 
-            // Oyun mantığı: Biri çıktığında anında yenisi üretilip kuyruğa eklenir
-            // Böylece kuyruk her zaman 10 elemanlı kalır.
+            // Game logic: when one leaves, a new one is immediately generated and enqueued
+            // This keeps the queue at 10 elements at all times.
             enqueue(generateRandomElement());
 
             return retData;
@@ -101,7 +101,7 @@ public class InputQueue {
         }
     }
 
-    // --- OYUN ÖZEL METOTLARI ---
+    // --- GAME-SPECIFIC METHODS ---
 
     private char generateRandomElement() {
         int roll = rnd.nextInt(10);
@@ -111,7 +111,8 @@ public class InputQueue {
         } else if (roll < 9) {
             return '@';
         } else {
-            return 'X';
+            // 50% chance for Red (Targeted) or Green (Random) robot
+            return rnd.nextBoolean() ? 'R' : 'G';
         }
     }
 
@@ -121,14 +122,17 @@ public class InputQueue {
 
         if (isEmpty()) return;
 
-        // Circular Queue ekrana çizdirilirken front'tan başlayıp size kadar dönmeliyiz
+        // When drawing the circular queue, iterate from front up to size elements
         int current = front;
         for (int i = 0; i < size(); i++) {
             char c = elements[current];
             TextAttributes color;
 
             if (c == '@') color = colorFireball;
-            else if (c == 'X') color = colorRobot;
+            else if (c == 'R' || c == 'G') {
+                color = colorRobot;
+                c = 'X'; // Display as X but track type internally as R (red) or G (green)
+            }
             else color = colorSymbol;
 
             cn.getTextWindow().output(drawX + 4, drawY + 1 + i, c, color);

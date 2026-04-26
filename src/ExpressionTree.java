@@ -11,17 +11,17 @@ public class ExpressionTree {
     // 1-based array for the binary tree (index 0 is unused)
     private char[] tree = new char[32];
 
-    // Ağaç imleci (Tree cursor) başlangıçta kökte (1)
+    // Tree cursor starts at the root (1)
     private int cursor = 1;
 
     private Console cn;
 
-    // Renkler
+    // Colors
     private TextAttributes colorDefault = new TextAttributes(Color.WHITE, Color.BLACK);
     private TextAttributes colorCursor = new TextAttributes(Color.GREEN, Color.BLACK);
 
-    // Ekrana çizim için her indeksin X ve Y koordinatları (1-31 arası)
-    // Bu değerleri konsol ekranına göre görsel olarak ayarlayabilirsin.
+    // X and Y coordinates for each node index (1-31) for rendering.
+    // Adjust these values visually according to the console screen.
     private int[] drawX = {0,
             40, // 1 (Root)
             20, 60, // 2, 3
@@ -39,15 +39,15 @@ public class ExpressionTree {
 
     public ExpressionTree(Console cn) {
         this.cn = cn;
-        // Ağacı boşluk karakteriyle doldur
+        // Fill the tree with space characters
         for (int i = 1; i <= 31; i++) {
             tree[i] = ' ';
         }
     }
 
-    // --- İMLEÇ HAREKETLERİ (Cursor Movements) ---
+    // --- CURSOR MOVEMENTS ---
 
-    // W: Parent, A: Left child, D: Right child. (Player'dan -1 puan düşülecek)
+    // W: Parent, A: Left child, D: Right child. (Player loses 1 point)
     public boolean moveCursor(char key) {
         int nextCursor = cursor;
 
@@ -61,12 +61,12 @@ public class ExpressionTree {
 
         if (nextCursor != cursor) {
             cursor = nextCursor;
-            return true; // Hareket başarılı (-1 point)
+            return true; // Movement successful (-1 point)
         }
         return false;
     }
 
-    // Sembol yerleştirildiğinde imleci otomatik olarak sıradaki boş slota taşır
+    // Automatically moves the cursor to the next empty slot after a symbol is placed
     public void autoMoveCursor() {
         for (int i = 1; i <= 31; i++) {
             if (tree[i] == ' ') {
@@ -76,7 +76,7 @@ public class ExpressionTree {
         }
     }
 
-    // --- EŞYA YERLEŞTİRME VE ALMA ---
+    // --- ITEM PLACEMENT AND RETRIEVAL ---
 
     public boolean placeSymbol(char symbol) {
         if (tree[cursor] == ' ') {
@@ -84,22 +84,22 @@ public class ExpressionTree {
             autoMoveCursor();
             return true;
         }
-        return false; // Slot dolu
+        return false; // Slot is full
     }
 
     public char takeSymbol() {
         char symbol = tree[cursor];
         if (symbol != ' ') {
             tree[cursor] = ' ';
-            return symbol; // Başarılı, eşya çantaya dönecek (-2 point)
+            return symbol; // Success; item returns to backpack (-2 point)
         }
-        return ' '; // Slot zaten boş
+        return ' '; // Slot is already empty
     }
 
-    // --- AĞAÇ DOĞRULAMA (Validation) ---
+    // --- TREE VALIDATION ---
 
-    // F tuşuna basıldığında çağrılır. 
-    // Hatalıysa false (-10 point), doğruysa true (Table Screen'e geçer)
+    // Called when the F key is pressed.
+    // Returns false on invalid tree (-10 point), true on valid tree (proceeds to Table Screen)
     public boolean finishTree() {
         int varCount = 0;
         int maxIndex = 0;
@@ -125,7 +125,7 @@ public class ExpressionTree {
         return true;
     }
 
-    // Ağacın puanını hesaplar (Düğüm sayısı * 10)
+    // Calculates the tree's score (node count * 10)
     public int calculateTreeScore() {
         int count = 0;
         for (int i = 1; i <= 31; i++) {
@@ -172,24 +172,24 @@ public class ExpressionTree {
         return result;
     }
 
-    // --- EKRANA ÇİZİM ---
+    // --- DRAW TO SCREEN ---
 
     public void draw() {
-        // Ekranı temizleme işlemi GameEngine tarafında yapılmalı
+        // Screen clearing should be handled by GameEngine
 
         for (int i = 1; i <= 31; i++) {
-            char symbol = (tree[i] == ' ') ? '.' : tree[i]; // Boş yerleri nokta ile göster
+            char symbol = (tree[i] == ' ') ? '.' : tree[i]; // Show empty slots as dots
 
-            // Eğer imleç bu indeksin üzerindeyse yeşil, değilse beyaz çiz
+            // Draw in green if cursor is on this index, otherwise white
             TextAttributes attr = (i == cursor) ? colorCursor : colorDefault;
 
             cn.getTextWindow().output(drawX[i], drawY[i], symbol, attr);
 
-            // Opsiyonel: Ağaç dallarını (/, \) çizmek istersen drawX ve drawY 
-            // aralarına statik karakterler basabilirsin.
+            // Optional: To draw tree branches (/, \), you can output static characters
+            // between drawX and drawY positions.
         }
 
-        // Infix ve Postfix metinlerini aşağıya yazdır
+        // Print Infix and Postfix expressions at the bottom
         ConsoleUtils.printString(cn, 2, 20, "Infix   : " + getInfix());
         ConsoleUtils.printString(cn, 2, 21, "Postfix : " + getPostfix());
     }

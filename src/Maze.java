@@ -9,7 +9,7 @@ import enigma.console.Console;
  * all empty areas are fully connected via a Flood-Fill algorithm.
  */
 public class Maze {
-    // Tree Table projesine göre güncellenmiş boyutlar
+    // Dimensions updated for the Tree Table project
     public static final int ROWS = 21;
     public static final int COLS = 45;
     public static char[][] map = new char[ROWS][COLS];

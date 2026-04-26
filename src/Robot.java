@@ -11,7 +11,7 @@ import java.util.Random;
  */
 public class Robot {
     private int x, y;
-    private boolean isTargeted; // true = Kırmızı (Hedefli), false = Yeşil (Rastgele)
+    private boolean isTargeted; // true = Red (Targeted), false = Green (Random)
     private boolean isAlive = true;
 
     private Console cn;
@@ -24,7 +24,14 @@ public class Robot {
         this.cn = cn;
         this.x = startX;
         this.y = startY;
-        this.isTargeted = rnd.nextBoolean(); // %50 ihtimal
+        this.isTargeted = rnd.nextBoolean(); // 50% chance
+    }
+
+    public Robot(Console cn, int startX, int startY, boolean isTargeted) {
+        this.cn = cn;
+        this.x = startX;
+        this.y = startY;
+        this.isTargeted = isTargeted;
     }
 
     public void move(Item[] items, int itemCount, Robot[] robots, int robotCount) {
@@ -34,14 +41,14 @@ public class Robot {
         int nextY = y;
 
         if (isTargeted) {
-            // Hedefli Mod: En yakın mantık sembolünü bul (Manhattan Distance)
+            // Targeted Mode: find the nearest logic symbol (Manhattan Distance)
             int bestDist = Integer.MAX_VALUE;
             int targetX = -1;
             int targetY = -1;
 
             for (int i = 0; i < itemCount; i++) {
                 char type = items[i].getType();
-                // Sadece mantık sembollerini hedef al (Ateş topunu '@' es geç)
+                // Target only logic symbols (skip fireball '@')
                 if (type != '@') {
                     int dist = Math.abs(x - items[i].getX()) + Math.abs(y - items[i].getY());
                     if (dist < bestDist) {
@@ -60,7 +67,7 @@ public class Robot {
                 if (targetY > y) dy = 1;
                 else if (targetY < y) dy = -1;
 
-                // Hedefe doğru gitmeyi dene
+                // Try to move towards the target
                 int[][] tries = { {dx, 0}, {0, dy}, {0, -dy}, {-dx, 0} };
                 boolean moved = false;
 
@@ -73,11 +80,11 @@ public class Robot {
                         break;
                     }
                 }
-                // Proje kuralı: "They are stuck on obstacles." 
-                // Eğer hareket edemezse olduğu yerde kalır, rastgele harekete geçmez.
+                // Project rule: "They are stuck on obstacles."
+                // If it can't move, it stays put; it does not fall back to random movement.
             }
         } else {
-            // Rastgele Mod
+            // Random Mode
             int dir = rnd.nextInt(4);
             if (dir == 0) nextX = x + 1;
             else if (dir == 1) nextY = y + 1;
@@ -86,11 +93,11 @@ public class Robot {
 
             if (!isValidMove(nextX, nextY, robots, robotCount)) {
                 nextX = x;
-                nextY = y; // Geçersizse hareket etme
+                nextY = y; // Invalid move, stay in place
             }
         }
 
-        // Pozisyon değiştiyse ekranda güncelle
+        // Update position on screen if it changed
         if (x != nextX || y != nextY) {
             erase();
             x = nextX;
@@ -103,7 +110,7 @@ public class Robot {
         if (nx < 0 || nx >= Maze.COLS || ny < 0 || ny >= Maze.ROWS) return false;
         if (Maze.map[ny][nx] == '#') return false;
 
-        // Diğer canlı robotlarla çarpışma kontrolü
+        // Check collision with other alive robots
         for (int i = 0; i < robotCount; i++) {
             if (robots[i] != this && robots[i].isAlive() && robots[i].getX() == nx && robots[i].getY() == ny) {
                 return false;

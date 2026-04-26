@@ -16,20 +16,21 @@ public class Player {
     private int life = INITIAL_MAX_HP;
     private int score = 0;
 
-    // Oyuncunun en son baktığı yön (Ateş topu fırlatmak için)
-    // Başlangıçta sağa (dx=1, dy=0) bakıyor olarak varsayalım
+    // Last facing direction of the player (for shooting fireballs)
+    // Initially facing right (dx=1, dy=0)
     private int lastDx = 1;
     private int lastDy = 0;
 
-    // Depolama Modu: true ise Tree (Ağaç), false ise Backpack (Çanta)
+    // Storage Mode: true = Tree, false = Backpack
     private boolean storageModeTree = true;
 
-    // Çanta için standart dizi kullanımı (Maksimum 8 eşya)
+    // Standard array for the backpack (maximum 8 items)
     private char[] backpack = new char[8];
     private int backpackCount = 0;
 
     private Console cn;
     private Maze maze;
+    private ExpressionTree tree; // ExpressionTree reference (for placing symbols)
 
     private TextAttributes colorPlayer = new TextAttributes(Color.GREEN, Color.BLACK);
 
@@ -37,7 +38,7 @@ public class Player {
         this.cn = cn;
         this.maze = maze;
 
-        // Başlangıçta rastgele boş bir koordinat bul
+        // Find a valid starting coordinate
         x = 5;
         y = 5;
         while (y < Maze.ROWS - 1 && Maze.map[y][x] == '#') {
@@ -58,10 +59,10 @@ public class Player {
         else if (key == KeyEvent.VK_UP) dy = -1;
         else if (key == KeyEvent.VK_DOWN) dy = 1;
 
-        // Geçersiz bir tuşa basıldıysa çık
+        // Return if an invalid key was pressed
         if (dx == 0 && dy == 0) return;
 
-        // Oyuncunun son hareket yönünü GÜNCELLE
+        // Update player's last movement direction
         lastDx = dx;
         lastDy = dy;
 
@@ -91,27 +92,35 @@ public class Player {
         return true;
     }
 
-    // 'M' tuşuna basıldığında modu değiştirir
+    // Called when 'M' key is pressed to toggle storage mode
     public void toggleStorageMode() {
         storageModeTree = !storageModeTree;
     }
 
-    // Toplanan eşyayı çantaya veya ağaca ekleme mantığı
-    public boolean collectSymbol(char symbol) {
+    // Logic for adding a collected item to the backpack or tree
+    public Character collectSymbol(char symbol) {
         if (storageModeTree) {
-            // TODO: Ağaç (Tree) sınıfına ekleme yapılacak
-            return true;
+            // Caller (GameEngine) should place it in the tree
+            return symbol;
         } else {
             if (backpackCount < backpack.length) {
-                backpack[backpackCount] = symbol;
-                backpackCount++;
-                return true;
+                backpack[backpackCount++] = symbol;
+                return null;
             } else {
-                // Proje kuralı: Çanta doluysa otomatik olarak Tree'ye yerleştirilir
-                // TODO: Ağaç (Tree) sınıfına ekleme yapılacak
-                return true;
+                // Backpack is full -> automatically go to tree (notify caller)
+                return symbol;
             }
         }
+    }
+    public Character takeFromBackpack() {
+        if (backpackCount == 0) return null;
+        char c = backpack[backpackCount - 1];
+        backpackCount--;
+        return c;
+    }
+
+    public boolean isBackpackFull() {
+        return backpackCount >= backpack.length;
     }
 
     // Getters & Setters
@@ -121,10 +130,39 @@ public class Player {
     public int getScore() { return score; }
     public boolean isStorageModeTree() { return storageModeTree; }
 
-    // Ateş topu sınıfından çağrılacak yön metotları
+    // Direction methods called by the fireball class
     public int getLastDx() { return lastDx; }
     public int getLastDy() { return lastDy; }
 
     public void addScore(int points) { score += points; }
     public void takeDamage(int amount) { life -= amount; }
+
+    // Sets the ExpressionTree reference (called by GameEngine)
+    public void setExpressionTree(ExpressionTree tree) { this.tree = tree; }
+
+    // --- Backpack Access Methods ---
+    public char[] getBackpack() { return backpack; }
+    public int getBackpackCount() { return backpackCount; }
+
+    // Removes the item at the given index from the backpack and shifts the rest
+    public char removeFromBackpack(int index) {
+        if (index < 0 || index >= backpackCount) return ' ';
+        char removed = backpack[index];
+        for (int i = index; i < backpackCount - 1; i++) {
+            backpack[i] = backpack[i + 1];
+        }
+        backpackCount--;
+        backpack[backpackCount] = ' '; // Clear the last slot
+        return removed;
+    }
+
+    // Add an item to the backpack
+    public boolean addToBackpack(char symbol) {
+        if (backpackCount < backpack.length) {
+            backpack[backpackCount] = symbol;
+            backpackCount++;
+            return true;
+        }
+        return false; // Backpack is full
+    }
 }

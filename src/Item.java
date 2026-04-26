@@ -22,11 +22,11 @@ public class Item {
     }
 
     public void draw() {
+        if (x < 0 || y < 0) return;
+
         if (type == '@') {
-            // Paketlenmiş Ateş Topu (Packed Fireball)
             cn.getTextWindow().output(x, y, type, colorFireball);
         } else {
-            // Mantık Sembolleri (Logic Symbols)
             cn.getTextWindow().output(x, y, type, colorSymbol);
         }
     }

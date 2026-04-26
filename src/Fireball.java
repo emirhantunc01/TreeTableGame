@@ -10,14 +10,14 @@ import java.awt.Color;
 public class Fireball {
     public static final int MAX_FIREBALLS = 50;
 
-    // Aktif ateş toplarını tutacağımız standart diziler
+    // Standard arrays to hold active fireballs
     private int[] fbX = new int[MAX_FIREBALLS];
     private int[] fbY = new int[MAX_FIREBALLS];
     private int[] fbDx = new int[MAX_FIREBALLS];
     private int[] fbDy = new int[MAX_FIREBALLS];
     private boolean[] active = new boolean[MAX_FIREBALLS];
 
-    private int packedCount = 0; // Oyuncunun topladığı cephane
+    private int packedCount = 0; // Ammunition collected by the player
     private Console cn;
     private TextAttributes colorFireball = new TextAttributes(Color.RED, Color.BLACK);
 
@@ -28,11 +28,11 @@ public class Fireball {
     public void addPacked() { packedCount++; }
     public int getPackedCount() { return packedCount; }
 
-    // Oyuncu ateş ettiğinde çağrılacak metot
+    // Called when the player fires a fireball
     public boolean fire(int startX, int startY, int dx, int dy) {
         if (packedCount <= 0 || (dx == 0 && dy == 0)) return false;
 
-        // Boş bir ateş topu slotu bul
+        // Find an empty fireball slot
         for (int i = 0; i < MAX_FIREBALLS; i++) {
             if (!active[i]) {
                 fbX[i] = startX + dx;
@@ -40,41 +40,41 @@ public class Fireball {
                 fbDx[i] = dx;
                 fbDy[i] = dy;
                 active[i] = true;
-                packedCount--; // Cephaneyi düş
+                packedCount--; // Consume ammo
                 return true;
             }
         }
         return false;
     }
 
-    // Oyun döngüsünde (GameEngine) her time unit'te çağrılacak metot
+    // Called every time unit in the game loop (GameEngine)
     public void update(Robot[] robots, int robotCount, Player p) {
         for (int i = 0; i < MAX_FIREBALLS; i++) {
             if (active[i]) {
-                // Eski pozisyonu sil
+                // Erase old position
                 cn.getTextWindow().output(fbX[i], fbY[i], ' ');
 
-                // İlerlet
+                // Advance
                 fbX[i] += fbDx[i];
                 fbY[i] += fbDy[i];
 
-                // Duvarlara veya sınırları çarpma kontrolü (Nesne içinden geçemez)
+                // Boundary and wall collision check (cannot pass through objects)
                 if (fbX[i] < 0 || fbX[i] >= Maze.COLS || fbY[i] < 0 || fbY[i] >= Maze.ROWS || Maze.map[fbY[i]][fbX[i]] == '#') {
                     active[i] = false;
                     continue;
                 }
 
-                // Robotlarla çarpışma kontrolü
+                // Robot collision check
                 for (int j = 0; j < robotCount; j++) {
                     if (robots[j].isAlive() && robots[j].getX() == fbX[i] && robots[j].getY() == fbY[i]) {
                         robots[j].die();
-                        p.addScore(50); // Oyuncuya 50 puan ekle
+                        p.addScore(50); // Award player 50 points
                     }
                 }
-                // Not: Proje dokümanı "One fireball can destroy many robots" dediği için
-                // robotu vurduktan sonra active[i] = false YAPMIYORUZ. İlerlemeye devam ediyor.
+                // Note: Project docs say "One fireball can destroy many robots", so
+                // we do NOT set active[i] = false after hitting a robot. It keeps moving.
 
-                // Yeni pozisyonu çiz
+                // Draw at new position
                 if (active[i]) {
                     cn.getTextWindow().output(fbX[i], fbY[i], 'o', colorFireball);
                 }

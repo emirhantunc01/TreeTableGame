@@ -40,19 +40,23 @@ public class Robot {
         int nextX = x;
         int nextY = y;
 
-        if (isTargeted) {
-            // Targeted Mode: find the nearest logic symbol (Manhattan Distance)
-            int bestDist = Integer.MAX_VALUE;
+        boolean targetedMod = rnd.nextBoolean();
+
+        if (targetedMod) {
+            // moving towards nearest logical symbol
+            int closeDist = Integer.MAX_VALUE;
             int targetX = -1;
             int targetY = -1;
 
             for (int i = 0; i < itemCount; i++) {
                 char type = items[i].getType();
-                // Target only logic symbols (skip fireball '@')
-                if (type != '@') {
+
+                // only logical symbols
+                if (type != '@' && type != ' ') {
                     int dist = Math.abs(x - items[i].getX()) + Math.abs(y - items[i].getY());
-                    if (dist < bestDist) {
-                        bestDist = dist;
+
+                    if (dist < closeDist) {
+                        closeDist = dist;
                         targetX = items[i].getX();
                         targetY = items[i].getY();
                     }
@@ -60,32 +64,38 @@ public class Robot {
             }
 
             if (targetX != -1) {
-                int dx = 0, dy = 0;
+                int dx = 0;
+                int dy = 0;
+
                 if (targetX > x) dx = 1;
                 else if (targetX < x) dx = -1;
 
                 if (targetY > y) dy = 1;
                 else if (targetY < y) dy = -1;
 
-                // Try to move towards the target
-                int[][] tries = { {dx, 0}, {0, dy}, {0, -dy}, {-dx, 0} };
-                boolean moved = false;
+                // try first x direc then y direc
+                int[][] tries = {
+                        {dx, 0},
+                        {0, dy}
+                };
 
                 for (int[] t : tries) {
                     if (t[0] == 0 && t[1] == 0) continue;
+
                     if (isValidMove(x + t[0], y + t[1], robots, robotCount)) {
                         nextX = x + t[0];
                         nextY = y + t[1];
-                        moved = true;
                         break;
                     }
                 }
-                // Project rule: "They are stuck on obstacles."
-                // If it can't move, it stays put; it does not fall back to random movement.
+
+
             }
+
         } else {
-            // Random Mode
+            // random movement
             int dir = rnd.nextInt(4);
+
             if (dir == 0) nextX = x + 1;
             else if (dir == 1) nextY = y + 1;
             else if (dir == 2) nextX = x - 1;
@@ -93,17 +103,18 @@ public class Robot {
 
             if (!isValidMove(nextX, nextY, robots, robotCount)) {
                 nextX = x;
-                nextY = y; // Invalid move, stay in place
+                nextY = y;
             }
         }
 
-        // Update position on screen if it changed
+        // erase old loc
         if (x != nextX || y != nextY) {
             erase();
             x = nextX;
             y = nextY;
-            draw();
         }
+
+        draw(targetedMod);
     }
 
     private boolean isValidMove(int nx, int ny, Robot[] robots, int robotCount) {
@@ -119,9 +130,19 @@ public class Robot {
         return true;
     }
 
+    public void draw(boolean targetedThisTurn) {
+        if (isAlive) {
+            if (targetedThisTurn) {
+                cn.getTextWindow().output(x, y, 'X', colorTargeted);
+            } else {
+                cn.getTextWindow().output(x, y, 'X', colorRandom);
+            }
+        }
+    }
+
     public void draw() {
         if (isAlive) {
-            cn.getTextWindow().output(x, y, 'X', isTargeted ? colorTargeted : colorRandom);
+            cn.getTextWindow().output(x, y, 'X', colorRandom);
         }
     }
 

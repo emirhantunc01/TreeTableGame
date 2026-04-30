@@ -44,9 +44,15 @@ public class GameEngine {
 
         // Set up keyboard listener
         cn.getTextWindow().addKeyListener(new KeyListener() {
-            public void keyPressed(KeyEvent e) { keypr = e.getKeyCode(); }
-            public void keyReleased(KeyEvent e) {}
-            public void keyTyped(KeyEvent e) {}
+            public void keyPressed(KeyEvent e) {
+                keypr = e.getKeyCode();
+            }
+
+            public void keyReleased(KeyEvent e) {
+            }
+
+            public void keyTyped(KeyEvent e) {
+            }
         });
 
         // Initialize components
@@ -72,19 +78,30 @@ public class GameEngine {
         while (!isGameOver) {
 
             // Screen switching keys (1, 2, 3)
-            if (keypr == KeyEvent.VK_1) { currentScreen = 1; ConsoleUtils.clearScreen(cn); needsRedraw = true; keypr = 0; }
-            if (keypr == KeyEvent.VK_2) { currentScreen = 2; ConsoleUtils.clearScreen(cn); keypr = 0; }
-            if (keypr == KeyEvent.VK_3) { currentScreen = 3; ConsoleUtils.clearScreen(cn); keypr = 0; }
+            if (keypr == KeyEvent.VK_1) {
+                currentScreen = 1;
+                ConsoleUtils.clearScreen(cn);
+                needsRedraw = true;
+                keypr = 0;
+            }
+            if (keypr == KeyEvent.VK_2) {
+                currentScreen = 2;
+                ConsoleUtils.clearScreen(cn);
+                keypr = 0;
+            }
+            if (keypr == KeyEvent.VK_3) {
+                currentScreen = 3;
+                ConsoleUtils.clearScreen(cn);
+                keypr = 0;
+            }
 
             if (currentScreen == 1) {
                 updateMazeScreen();
                 Thread.sleep(100); // 1 Time Unit = 100 ms
-            }
-            else if (currentScreen == 2) {
+            } else if (currentScreen == 2) {
                 updateTreeScreen();
                 Thread.sleep(100); // Tree screen doesn't advance time, but waits for input
-            }
-            else if (currentScreen == 3) {
+            } else if (currentScreen == 3) {
                 updateTableScreen();
                 Thread.sleep(100);
             }
@@ -143,13 +160,14 @@ public class GameEngine {
         player.draw(); // Keep player always on top
 
         // 3. Fireball Movement (every 1 time unit)
-        fireballManager.update(robots, robotCount, player);
+        fireballManager.update(robots, robotCount, player, items, itemCount);
 
         // 4. Robot Movement (every 4 time units)
         if (timeUnit % 4 == 0) {
             for (int i = 0; i < robotCount; i++) {
                 robots[i].move(items, itemCount, robots, robotCount);
             }
+            checkRobotItemCollection();
         }
 
         // 5. Add New Input (every 2 seconds = 20 time units)
@@ -179,9 +197,8 @@ public class GameEngine {
 
         if (keypr != 0) {
             if (keypr == KeyEvent.VK_W || keypr == KeyEvent.VK_A || keypr == KeyEvent.VK_D) {
-                if (treeScreen.moveCursor((char)keypr)) player.addScore(-1); // Penalty point
-            }
-            else if (keypr == KeyEvent.VK_T) {
+                if (treeScreen.moveCursor((char) keypr)) player.addScore(-1); // Penalty point
+            } else if (keypr == KeyEvent.VK_T) {
                 // Take last item from Backpack and place it into the tree
                 if (player.getBackpackCount() > 0) {
                     char symbol = player.removeFromBackpack(player.getBackpackCount() - 1);
@@ -190,8 +207,7 @@ public class GameEngine {
                         player.addToBackpack(symbol);
                     }
                 }
-            }
-            else if (keypr == KeyEvent.VK_R) {
+            } else if (keypr == KeyEvent.VK_R) {
                 // Remove from tree and put in backpack
                 char c = treeScreen.takeSymbol();
                 if (c != ' ') {
@@ -201,8 +217,7 @@ public class GameEngine {
                         treeScreen.placeSymbol(c);
                     }
                 }
-            }
-            else if (keypr == KeyEvent.VK_F) {
+            } else if (keypr == KeyEvent.VK_F) {
                 if (treeScreen.finishTree()) {
                     int treeScore = treeScreen.calculateTreeScore();
                     player.addScore(treeScore);
@@ -287,16 +302,45 @@ public class GameEngine {
     // Düzeltilmiş checkItemCollection() metodu:
     private void checkItemCollection() {
         for (int i = 0; i < itemCount; i++) {
-            if (items[i].getType() != ' ' && items[i].getX() == player.getX() && items[i].getY() == player.getY()) {
+            if (items[i].getType() != ' ' &&
+                    items[i].getX() == player.getX() &&
+                    items[i].getY() == player.getY()) {
 
-                if (items[i].getType() == '@') {
+                boolean collected = false;
+                char type = items[i].getType();
+
+                if (type == '@') {
                     fireballManager.addPacked();
+                    collected = true;
                 } else {
-                    player.collectSymbol(items[i].getType());
+                    collected = player.collectSymbol(type);
                 }
 
-                items[i].erase(); // ← EKLE: Önce ekrandan sil
-                items[i] = new Item(-1, -1, ' ', cn); // Sonra dummy item yap
+                if (collected) {
+                    items[i].erase();
+                    items[i] = new Item(-1, -1, ' ', cn);
+                } else {
+                    // if tree is full don't erase
+                    items[i].draw();
+                }
+            }
+        }
+    }
+
+    private void checkRobotItemCollection() {
+        for (int r = 0; r < robotCount; r++) {
+            if (!robots[r].isAlive()) continue;
+
+            for (int i = 0; i < itemCount; i++) {
+                char type = items[i].getType();
+
+                if (type != ' ' && type != '@' &&
+                        items[i].getX() == robots[r].getX() &&
+                        items[i].getY() == robots[r].getY()) {
+
+                    items[i].erase();
+                    items[i] = new Item(-1, -1, ' ', cn);
+                }
             }
         }
     }
@@ -329,20 +373,61 @@ public class GameEngine {
         ConsoleUtils.printString(cn, 50, 17, "Life     :  " + player.getLife() + "  ");
         ConsoleUtils.printString(cn, 50, 18, "Fireball :  " + fireballManager.getPackedCount() + "  ");
         ConsoleUtils.printString(cn, 50, 19, "Storage  :  " + (player.isStorageModeTree() ? "Tree    " : "Backpack"));
+
+        drawBackpackOnMaze();
+    }
+
+    private void drawBackpackOnMaze() {
+        int startX = 75;
+        int startY = 15;
+
+        ConsoleUtils.printString(cn, startX, startY,     "Backpack        ");
+        ConsoleUtils.printString(cn, startX, startY + 1, "+---+           ");
+        ConsoleUtils.printString(cn, startX, startY + 2, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 3, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 4, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 5, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 6, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 7, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 8, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 9, "|   |           ");
+        ConsoleUtils.printString(cn, startX, startY + 10, "+---+           ");
+
+        char[] bp = player.getBackpack();
+        int count = player.getBackpackCount();
+
+        for (int i = 0; i < 8; i++) {
+            char c = ' ';
+
+            if (i < count) {
+                c = bp[i];
+            }
+
+            ConsoleUtils.printString(cn, startX + 2, startY + 2 + i, String.valueOf(c));
+        }
+
+        ConsoleUtils.printString(cn, startX, startY + 11, count + "/8");
     }
 
     // Shows backpack contents and controls on the tree screen
     private void drawBackpackOnTreeScreen() {
+
+        ConsoleUtils.printString(cn, 2, 24, "                                      ");
+
         ConsoleUtils.printString(cn, 2, 24, "Backpack [" + player.getBackpackCount() + "/8]: ");
+
         char[] bp = player.getBackpack();
+
         for (int i = 0; i < player.getBackpackCount(); i++) {
             ConsoleUtils.printString(cn, 18 + i * 2, 24, String.valueOf(bp[i]));
         }
-        // Show empty slots as dots
+
+        // empty slots
         for (int i = player.getBackpackCount(); i < 8; i++) {
             ConsoleUtils.printString(cn, 18 + i * 2, 24, ".");
         }
+
         ConsoleUtils.printString(cn, 2, 25, "Score: " + player.getScore() + "  Life: " + player.getLife() + "    ");
-        ConsoleUtils.printString(cn, 2, 27, "T:Place  R:Take  F:Finish  W/A/D:Move  M:Mode");
+        ConsoleUtils.printString(cn, 2, 27, "T:Place  R:Take  F:Finish  W/A/D:Move");
     }
 }

@@ -2,6 +2,7 @@ import enigma.console.Console;
 import enigma.console.TextAttributes;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.util.Random;
 
 /**
  * Player.java
@@ -34,20 +35,17 @@ public class Player {
 
     private TextAttributes colorPlayer = new TextAttributes(Color.GREEN, Color.BLACK);
 
+
     public Player(Console cn, Maze maze) {
         this.cn = cn;
         this.maze = maze;
 
-        // Find a valid starting coordinate
-        x = 5;
-        y = 5;
-        while (y < Maze.ROWS - 1 && Maze.map[y][x] == '#') {
-            x++;
-            if (x >= Maze.COLS - 1) {
-                x = 1;
-                y++;
-            }
-        }
+        Random rnd = new Random();
+
+        do {
+            x = rnd.nextInt(Maze.COLS - 2) + 1;
+            y = rnd.nextInt(Maze.ROWS - 2) + 1;
+        } while (Maze.map[y][x] == '#');
     }
 
     public void move(int key) {
@@ -98,19 +96,26 @@ public class Player {
     }
 
     // Logic for adding a collected item to the backpack or tree
-    public Character collectSymbol(char symbol) {
+    public boolean collectSymbol(char symbol) {
+        // adds symbols to tree
         if (storageModeTree) {
-            // Caller (GameEngine) should place it in the tree
-            return symbol;
-        } else {
-            if (backpackCount < backpack.length) {
-                backpack[backpackCount++] = symbol;
-                return null;
-            } else {
-                // Backpack is full -> automatically go to tree (notify caller)
-                return symbol;
+            if (tree != null) {
+                return tree.placeSymbol(symbol);
             }
+            return false;
         }
+
+        // add symbols to backpack
+        if (addToBackpack(symbol)) {
+            return true;
+        }
+
+        // if backpack full adds symbols to tree automaticlly
+        if (tree != null) {
+            return tree.placeSymbol(symbol);
+        }
+
+        return false;
     }
     public Character takeFromBackpack() {
         if (backpackCount == 0) return null;

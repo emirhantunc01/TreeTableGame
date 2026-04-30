@@ -48,7 +48,7 @@ public class Fireball {
     }
 
     // Called every time unit in the game loop (GameEngine)
-    public void update(Robot[] robots, int robotCount, Player p) {
+    public void update(Robot[] robots, int robotCount, Player p,  Item[] items, int itemCount) {
         for (int i = 0; i < MAX_FIREBALLS; i++) {
             if (active[i]) {
                 // Erase old position
@@ -74,6 +74,24 @@ public class Fireball {
                 // Note: Project docs say "One fireball can destroy many robots", so
                 // we do NOT set active[i] = false after hitting a robot. It keeps moving.
 
+
+                // Item/object çarpışması: robot dışındaki objeye çarparsa fireball durur
+                boolean hitObject = false;
+
+                for (int k = 0; k < itemCount; k++) {
+                    if (items[k].getType() != ' ' &&
+                            items[k].getX() == fbX[i] &&
+                            items[k].getY() == fbY[i]) {
+
+                        hitObject = true;
+                        break;
+                    }
+                }
+
+                if (hitObject) {
+                    active[i] = false;
+                    continue;
+                }
                 // Draw at new position
                 if (active[i]) {
                     cn.getTextWindow().output(fbX[i], fbY[i], 'o', colorFireball);

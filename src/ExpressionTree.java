@@ -87,6 +87,17 @@ public class ExpressionTree {
         return false; // Slot is full
     }
 
+    public boolean placeSymbolInFirstEmptySlot(char symbol) {
+        for (int i = 1; i <= 31; i++) {
+            if (tree[i] == ' ') {
+                tree[i] = symbol;
+                autoMoveCursor();
+                return true;
+            }
+        }
+        return false; // Tree is full
+    }
+
     public char takeSymbol() {
         char symbol = tree[cursor];
         if (symbol != ' ') {

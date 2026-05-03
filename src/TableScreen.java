@@ -105,11 +105,14 @@ public class TableScreen {
 
                 // When an operator is encountered, pop values as (Integer) from the Stack
             else if (ch == '~') {
+                if (stack.isEmpty()) return 0; // Error: not enough operands
                 int op1 = (Integer) stack.pop(); //
                 stack.push((op1 == 0) ? 1 : 0);
             }
             else {
+                if (stack.isEmpty()) return 0; // Error: not enough operands
                 int op2 = (Integer) stack.pop(); //
+                if (stack.isEmpty()) return 0; // Error: not enough operands
                 int op1 = (Integer) stack.pop(); //
 
                 if (ch == '^') stack.push((op1 == 1 && op2 == 1) ? 1 : 0);
@@ -120,6 +123,7 @@ public class TableScreen {
             }
         }
         // Cast the final result as Integer and return it
+        if (stack.isEmpty()) return 0; // Error: no result
         return (Integer) stack.pop(); //
     }
 

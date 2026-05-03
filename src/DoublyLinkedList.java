@@ -70,11 +70,10 @@ public class DoublyLinkedList {
             }
             br.close();
         } catch (Exception e) {
-            // If file doesn't exist or can't be read, create a default list
-            insert("Irmak Yol", 412);
-            insert("Tarkan Bulut", 728);
-            insert("Ali Deniz", 56);
-            insert("Deniz Toprak", 190);
+            // If the file doesn't exist or can't be read, start with an empty list.
+            // Previously default entries were inserted here; removed so highscore
+            // reflects actual saved data. Leave the list empty and let the game
+            // create/append entries on game over.
         }
     }
 

@@ -12,6 +12,7 @@ import java.util.Random;
  */
 public class GameEngine {
     private Console cn;
+    private String playerName; // Player's name for high score table
 
     // --- Game Screens and Components ---
     private Maze maze;
@@ -34,17 +35,38 @@ public class GameEngine {
     private int seconds = 0;
     private int currentScreen = 1; // 1: Maze, 2: Tree, 3: Table
     private boolean isGameOver = false;
+    private boolean treeSubmitted = false; // Flag to prevent re-submitting the same tree
 
     // For keyboard input
     private int keypr = 0;
     private Random rnd = new Random();
+    // Name input state (used before main loop)
+    private volatile boolean namingMode = false;
+    private StringBuilder nameBuffer = new StringBuilder();
+    private int nameInputX = 0, nameInputY = 0;
 
     public GameEngine() throws Exception {
         cn = Enigma.getConsole("Tree & Table", 100, 30, 20);
 
-        // Set up keyboard listener
+        // Set up keyboard listener (also used for interactive name input)
         cn.getTextWindow().addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e) {
+                // Handle editing while in namingMode (Backspace / Enter)
+                if (namingMode) {
+                    if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                        if (nameBuffer.length() > 0) {
+                            // remove last char and erase from screen
+                            int pos = nameInputX + nameBuffer.length() - 1;
+                            nameBuffer.deleteCharAt(nameBuffer.length() - 1);
+                            cn.getTextWindow().output(pos, nameInputY, ' ');
+                            cn.getTextWindow().setCursorPosition(pos, nameInputY);
+                        }
+                    } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                        namingMode = false; // finish input
+                    }
+                    return;
+                }
+
                 keypr = e.getKeyCode();
             }
 
@@ -52,8 +74,46 @@ public class GameEngine {
             }
 
             public void keyTyped(KeyEvent e) {
+                // Append printable characters while naming
+                if (namingMode) {
+                    char ch = e.getKeyChar();
+                    if (ch >= 32 && ch != 127 && nameBuffer.length() < 20) {
+                        nameBuffer.append(ch);
+                        int pos = nameInputX + nameBuffer.length() - 1;
+                        cn.getTextWindow().output(pos, nameInputY, ch);
+                        cn.getTextWindow().setCursorPosition(pos + 1, nameInputY);
+                    }
+                }
             }
         });
+
+        // Ask for player name at the beginning (centered)
+        ConsoleUtils.clearScreen(cn);
+        String title = "WELCOME TO TREE & TABLE GAME";
+        String prompt = "ENTER YOUR NAME (press Enter for default)";
+        int centerX = (100 - title.length()) / 2;
+        int titleY = 8;
+        ConsoleUtils.printString(cn, centerX, titleY, title);
+        int promptX = (100 - prompt.length()) / 2;
+        int promptY = titleY + 2;
+        ConsoleUtils.printString(cn, promptX, promptY, prompt);
+
+        // Set input position slightly below prompt, centered
+        nameInputY = promptY + 2;
+        nameInputX = (100 - 20) / 2; // allow up to 20 chars
+        cn.getTextWindow().setCursorPosition(nameInputX, nameInputY);
+        namingMode = true;
+        nameBuffer.setLength(0);
+        // Wait until user finishes typing (Enter sets namingMode=false)
+        while (namingMode) {
+            try { Thread.sleep(30); } catch (InterruptedException ie) {}
+        }
+        playerName = nameBuffer.toString().trim();
+        if (playerName.isEmpty()) playerName = "Player";
+        // Show chosen name briefly
+        ConsoleUtils.printString(cn, nameInputX, nameInputY, playerName + "                    ");
+        try { Thread.sleep(800); } catch (Exception e) {}
+        ConsoleUtils.clearScreen(cn);
 
         // Initialize components
         maze = Maze.loadFromFile("maze.txt");
@@ -74,6 +134,8 @@ public class GameEngine {
         run();
     }
 
+    // (name input handled interactively using KeyListener before main loop)
+
     private void run() throws InterruptedException {
         while (!isGameOver) {
 
@@ -87,6 +149,12 @@ public class GameEngine {
             if (keypr == KeyEvent.VK_2) {
                 currentScreen = 2;
                 ConsoleUtils.clearScreen(cn);
+                // Reset tree if coming back from table or first time
+                if (treeSubmitted) {
+                    treeScreen.resetTree();
+                    treeSubmitted = false;
+                    player.clearBackpack();
+                }
                 keypr = 0;
             }
             if (keypr == KeyEvent.VK_3) {
@@ -116,8 +184,8 @@ public class GameEngine {
         DoublyLinkedList highScoreTable = new DoublyLinkedList();
         highScoreTable.loadFromFile("highscore.txt");
 
-        // Add player's score to the list (name is "Player1" for now)
-        highScoreTable.insert("Player1", player.getScore());
+        // Add player's score to the list with their name
+        highScoreTable.insert(playerName, player.getScore());
 
         // Save updated high score table to file
         highScoreTable.saveToFile("highscore.txt");
@@ -193,9 +261,8 @@ public class GameEngine {
     private void updateTreeScreen() {
         treeScreen.draw();
         drawBackpackOnTreeScreen(); // Show backpack contents
-        // Draw HUD and Input Queue on tree screen (same as maze, per spec layout)
+        // Draw HUD on tree screen (Input Queue is only for Maze mode)
         drawHUD();
-        inputQueue.draw(50, 2);
 
         if (keypr != 0) {
             if (keypr == KeyEvent.VK_W || keypr == KeyEvent.VK_A || keypr == KeyEvent.VK_D) {
@@ -223,6 +290,7 @@ public class GameEngine {
                 if (treeScreen.finishTree()) {
                     int treeScore = treeScreen.calculateTreeScore();
                     player.addScore(treeScore);
+                    treeSubmitted = true; // Mark tree as submitted to prevent re-submission
                     // Create and initialize the TableScreen
                     tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore);
                     tableScreen.init();

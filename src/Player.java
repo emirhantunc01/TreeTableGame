@@ -170,4 +170,12 @@ public class Player {
         }
         return false; // Backpack is full
     }
+
+    // Clears the backpack (empties all items)
+    public void clearBackpack() {
+        for (int i = 0; i < backpack.length; i++) {
+            backpack[i] = ' ';
+        }
+        backpackCount = 0;
+    }
 }

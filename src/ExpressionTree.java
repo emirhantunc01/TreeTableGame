@@ -194,4 +194,12 @@ public class ExpressionTree {
         ConsoleUtils.printString(cn, 2, 20, "Infix   : " + getInfix());
         ConsoleUtils.printString(cn, 2, 21, "Postfix : " + getPostfix());
     }
+
+    // Resets the tree to initial state (all empty slots)
+    public void resetTree() {
+        for (int i = 1; i <= 31; i++) {
+            tree[i] = ' ';
+        }
+        cursor = 1;
+    }
 }

@@ -1,0 +1,19 @@
+Index: .idea/libraries/Enigma_Edited2.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><component name=\"libraryTable\">\r\n  <library name=\"Enigma-Edited2\">\r\n    <CLASSES>\r\n      <root url=\"jar://$PROJECT_DIR$/../../CME/II/PBL II/Clumsy Twins/Enigma-Edited2.jar!/\" />\r\n    </CLASSES>\r\n    <JAVADOC />\r\n    <SOURCES />\r\n  </library>\r\n</component>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/libraries/Enigma_Edited2.xml b/.idea/libraries/Enigma_Edited2.xml
+--- a/.idea/libraries/Enigma_Edited2.xml	(revision 54c58c49701a88e4d645bf2ebae310fd07094519)
++++ b/.idea/libraries/Enigma_Edited2.xml	(date 1777810369306)
+@@ -1,7 +1,7 @@
+ <component name="libraryTable">
+   <library name="Enigma-Edited2">
+     <CLASSES>
+-      <root url="jar://$PROJECT_DIR$/../../CME/II/PBL II/Clumsy Twins/Enigma-Edited2.jar!/" />
++      <root url="jar://$USER_HOME$/Downloads/Enigma-Edited2.jar!/" />
+     </CLASSES>
+     <JAVADOC />
+     <SOURCES />

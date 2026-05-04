@@ -102,12 +102,13 @@ public class ExpressionTree {
     // Returns false on invalid tree (-10 point), true on valid tree (proceeds to Table Screen)
     public boolean finishTree() {
         int varCount = 0;
-        int maxIndex = 0;
+        boolean hasDepth3Node = false;
 
         for (int i = 1; i <= 31; i++) {
             char c = tree[i];
             if (c != ' ') {
-                maxIndex = i;
+                // Depth 3 means nodes at indices 4-7 (or deeper: 8-31)
+                if (i >= 4) hasDepth3Node = true;
                 if (c == 'A' || c == 'B' || c == 'C' || c == 'D' ||
                         c == 'a' || c == 'b' || c == 'c' || c == 'd') {
                     varCount++;
@@ -115,12 +116,12 @@ public class ExpressionTree {
             }
         }
 
-        // Kural 1: Minimum 3 variables
+        // Rule 1: Minimum 3 variables
         if (varCount < 3) return false;
 
-        // Kural 2: Minimum depth is 3. 
-        // Depth 3 means we must have at least one node in indices 4 to 7.
-        if (maxIndex < 4) return false;
+        // Rule 2: Minimum depth is 3.
+        // Depth 3 means we must have at least one node in indices 4 to 31.
+        if (!hasDepth3Node) return false;
 
         return true;
     }
@@ -134,7 +135,7 @@ public class ExpressionTree {
         return count * 10;
     }
 
-    // --- INFIX VE POSTFIX YAZDIRMA ---
+    // --- INFIX AND POSTFIX STRING BUILDERS ---
 
     public String getInfix() {
         return buildInfix(1);

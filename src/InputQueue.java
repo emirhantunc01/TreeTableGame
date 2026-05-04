@@ -129,9 +129,12 @@ public class InputQueue {
             TextAttributes color;
 
             if (c == '@') color = colorFireball;
-            else if (c == 'R' || c == 'G') {
-                color = colorRobot;
-                c = 'X'; // Display as X but track type internally as R (red) or G (green)
+            else if (c == 'R') {
+                color = colorRobot; // RED - targeted robot
+                c = 'X';
+            } else if (c == 'G') {
+                color = new enigma.console.TextAttributes(java.awt.Color.GREEN, java.awt.Color.BLACK); // GREEN - random robot
+                c = 'X';
             }
             else color = colorSymbol;
 

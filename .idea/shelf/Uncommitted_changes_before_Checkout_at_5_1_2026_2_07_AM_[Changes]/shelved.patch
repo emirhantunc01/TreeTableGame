@@ -1,0 +1,56 @@
+Index: .idea/libraries/Enigma_Edited2.xml
+===================================================================
+diff --git a/.idea/libraries/Enigma_Edited2.xml b/.idea/libraries/Enigma_Edited2.xml
+deleted file mode 100644
+--- a/.idea/libraries/Enigma_Edited2.xml	(revision 54c58c49701a88e4d645bf2ebae310fd07094519)
++++ /dev/null	(revision 54c58c49701a88e4d645bf2ebae310fd07094519)
+@@ -1,9 +0,0 @@
+-<component name="libraryTable">
+-  <library name="Enigma-Edited2">
+-    <CLASSES>
+-      <root url="jar://$PROJECT_DIR$/../../CME/II/PBL II/Clumsy Twins/Enigma-Edited2.jar!/" />
+-    </CLASSES>
+-    <JAVADOC />
+-    <SOURCES />
+-  </library>
+-</component>
+\ No newline at end of file
+Index: TreeTableGame.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"JAVA_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\" inherit-compiler-output=\"true\">\r\n    <exclude-output />\r\n    <content url=\"file://$MODULE_DIR$\">\r\n      <sourceFolder url=\"file://$MODULE_DIR$/src\" isTestSource=\"false\" />\r\n    </content>\r\n    <orderEntry type=\"inheritedJdk\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n    <orderEntry type=\"library\" exported=\"\" name=\"Enigma-Edited2\" level=\"project\" />\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/TreeTableGame.iml b/TreeTableGame.iml
+--- a/TreeTableGame.iml	(revision 54c58c49701a88e4d645bf2ebae310fd07094519)
++++ b/TreeTableGame.iml	(date 1777625815242)
+@@ -7,6 +7,6 @@
+     </content>
+     <orderEntry type="inheritedJdk" />
+     <orderEntry type="sourceFolder" forTests="false" />
+-    <orderEntry type="library" exported="" name="Enigma-Edited2" level="project" />
++    <orderEntry type="library" name="Enigma-Edited2(7)" level="project" />
+   </component>
+ </module>
+\ No newline at end of file
+Index: .idea/libraries/Enigma_Edited2_7_.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/libraries/Enigma_Edited2_7_.xml b/.idea/libraries/Enigma_Edited2_7_.xml
+new file mode 100644
+--- /dev/null	(date 1777625815249)
++++ b/.idea/libraries/Enigma_Edited2_7_.xml	(date 1777625815249)
+@@ -0,0 +1,9 @@
++<component name="libraryTable">
++  <library name="Enigma-Edited2(7)">
++    <CLASSES>
++      <root url="jar://$USER_HOME$/Downloads/Enigma-Edited2(7).jar!/" />
++    </CLASSES>
++    <JAVADOC />
++    <SOURCES />
++  </library>
++</component>
+\ No newline at end of file

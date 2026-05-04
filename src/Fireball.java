@@ -75,7 +75,7 @@ public class Fireball {
                 // we do NOT set active[i] = false after hitting a robot. It keeps moving.
 
 
-                // Item/object çarpışması: robot dışındaki objeye çarparsa fireball durur
+                // Item/object collision: if fireball hits a non-robot object, it stops
                 boolean hitObject = false;
 
                 for (int k = 0; k < itemCount; k++) {

@@ -92,4 +92,19 @@ public class DoublyLinkedList {
             current = current.getNext();
         }
     }
+
+    // Saves the list back to "highscore.txt" in descending order
+    public void saveToFile(String filename) {
+        try {
+            PrintWriter pw = new PrintWriter(new FileWriter(filename));
+            ScoreNode current = head;
+            while (current != null) {
+                pw.println(current.getName() + " " + current.getScore());
+                current = current.getNext();
+            }
+            pw.close();
+        } catch (Exception e) {
+            System.out.println("Could not save high score file: " + e.getMessage());
+        }
+    }
 }

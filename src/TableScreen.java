@@ -149,10 +149,10 @@ public class TableScreen {
 
                 if (answer == correct) {
                     correctCount++;
-                    player.addScore(treeScore); // Correct answer: score equal to tree score
+                    player.addScore(3); // Correct answer: +3 points (spec requirement)
                     ConsoleUtils.printString(cn, 9, drawY, String.valueOf(answer), colorCorrect);
                 } else {
-                    player.addScore(-5); // Wrong answer penalty
+                    player.addScore(-2); // Wrong answer penalty: -2 points (spec requirement)
                     ConsoleUtils.printString(cn, 9, drawY, String.valueOf(answer), colorWrong);
                     // Show the correct answer as well
                     ConsoleUtils.printString(cn, 11, drawY, "(" + correct + ")", colorNormal);

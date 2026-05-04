@@ -107,10 +107,6 @@ public class GameEngine {
             }
         }
 
-        // Game Over Screen (High Score Table will be called)
-        ConsoleUtils.clearScreen(cn);
-        ConsoleUtils.printString(cn, 40, 15, "GAME OVER!");
-        ConsoleUtils.printString(cn, 35, 17, "Final Score: " + player.getScore());
         // Game Over Screen
         ConsoleUtils.clearScreen(cn);
         ConsoleUtils.printString(cn, 40, 10, "GAME OVER!");
@@ -122,6 +118,9 @@ public class GameEngine {
 
         // Add player's score to the list (name is "Player1" for now)
         highScoreTable.insert("Player1", player.getScore());
+
+        // Save updated high score table to file
+        highScoreTable.saveToFile("highscore.txt");
 
         // Draw the table to the screen
         highScoreTable.display(cn, 35, 15);
@@ -194,6 +193,9 @@ public class GameEngine {
     private void updateTreeScreen() {
         treeScreen.draw();
         drawBackpackOnTreeScreen(); // Show backpack contents
+        // Draw HUD and Input Queue on tree screen (same as maze, per spec layout)
+        drawHUD();
+        inputQueue.draw(50, 2);
 
         if (keypr != 0) {
             if (keypr == KeyEvent.VK_W || keypr == KeyEvent.VK_A || keypr == KeyEvent.VK_D) {
@@ -299,7 +301,7 @@ public class GameEngine {
     }
 
     // Checks whether the player stepped on an item
-    // Düzeltilmiş checkItemCollection() metodu:
+    // Checks whether the player stepped on an item and collects it:
     private void checkItemCollection() {
         for (int i = 0; i < itemCount; i++) {
             if (items[i].getType() != ' ' &&

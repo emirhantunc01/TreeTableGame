@@ -19,6 +19,14 @@ public class DoublyLinkedList {
 
     // Inserts score in descending order at the appropriate position
     public void insert(String name, int score) {
+        ScoreNode existing = findNodeByName(name);
+        if (existing != null) {
+            if (score <= existing.getScore()) {
+                return;
+            }
+            removeNode(existing);
+        }
+
         ScoreNode newNode = new ScoreNode(name, score);
 
         // If the list is empty
@@ -51,6 +59,37 @@ public class DoublyLinkedList {
         }
         current.setNext(newNode);
         newNode.setPrev(current);
+    }
+
+    private ScoreNode findNodeByName(String name) {
+        ScoreNode current = head;
+        while (current != null) {
+            if (current.getName().equals(name)) {
+                return current;
+            }
+            current = current.getNext();
+        }
+        return null;
+    }
+
+    private void removeNode(ScoreNode node) {
+        ScoreNode previous = node.getPrev();
+        ScoreNode next = node.getNext();
+
+        if (previous != null) {
+            previous.setNext(next);
+        } else {
+            head = next;
+        }
+
+        if (next != null) {
+            next.setPrev(previous);
+        } else {
+            tail = previous;
+        }
+
+        node.setPrev(null);
+        node.setNext(null);
     }
 
     // Loads data from "highscore.txt"

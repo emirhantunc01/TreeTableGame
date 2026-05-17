@@ -47,8 +47,21 @@ public class GameEngine {
 
     public GameEngine() throws Exception {
         cn = Enigma.getConsole("Tree & Table", 100, 30, 20);
+        setupKeyboardListener();
 
-        // Set up keyboard listener (also used for interactive name input)
+        boolean playAgain = true;
+        while (playAgain) {
+            askForPlayerName();
+            initializeGame();
+            run();
+            playAgain = showGameOverScreen();
+        }
+
+        ConsoleUtils.clearScreen(cn);
+        ConsoleUtils.printString(cn, 40, 14, "THANKS FOR PLAYING!");
+    }
+
+    private void setupKeyboardListener() {
         cn.getTextWindow().addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e) {
                 // Handle editing while in namingMode (Backspace / Enter)
@@ -86,7 +99,9 @@ public class GameEngine {
                 }
             }
         });
+    }
 
+    private void askForPlayerName() throws InterruptedException {
         // Ask for player name at the beginning (centered)
         ConsoleUtils.clearScreen(cn);
         String title = "WELCOME TO TREE & TABLE GAME";
@@ -106,14 +121,30 @@ public class GameEngine {
         nameBuffer.setLength(0);
         // Wait until user finishes typing (Enter sets namingMode=false)
         while (namingMode) {
-            try { Thread.sleep(30); } catch (InterruptedException ie) {}
+            Thread.sleep(30);
         }
         playerName = nameBuffer.toString().trim();
         if (playerName.isEmpty()) playerName = "Player";
         // Show chosen name briefly
         ConsoleUtils.printString(cn, nameInputX, nameInputY, playerName + "                    ");
-        try { Thread.sleep(800); } catch (Exception e) {}
+        Thread.sleep(800);
         ConsoleUtils.clearScreen(cn);
+    }
+
+    private void initializeGame() throws Exception {
+        items = new Item[100];
+        itemCount = 0;
+        robots = new Robot[50];
+        robotCount = 0;
+
+        timeUnit = 0;
+        seconds = 0;
+        currentScreen = 1;
+        isGameOver = false;
+        treeSubmitted = false;
+        needsRedraw = false;
+        tableScreen = null;
+        keypr = 0;
 
         // Initialize components
         maze = Maze.loadFromFile("maze.txt");
@@ -129,9 +160,6 @@ public class GameEngine {
         for (int i = 0; i < 10; i++) {
             insertElementFromQueue();
         }
-
-        // Start the main game loop
-        run();
     }
 
     // (name input handled interactively using KeyListener before main loop)
@@ -174,7 +202,9 @@ public class GameEngine {
                 Thread.sleep(100);
             }
         }
+    }
 
+    private boolean showGameOverScreen() throws InterruptedException {
         // Game Over Screen
         ConsoleUtils.clearScreen(cn);
         ConsoleUtils.printString(cn, 40, 10, "GAME OVER!");
@@ -192,6 +222,21 @@ public class GameEngine {
 
         // Draw the table to the screen
         highScoreTable.display(cn, 35, 15);
+
+        ConsoleUtils.printString(cn, 31, 27, "[ P ] PLAY AGAIN      [ ESC ] EXIT");
+        keypr = 0;
+
+        while (true) {
+            if (keypr == KeyEvent.VK_P || keypr == KeyEvent.VK_ENTER) {
+                keypr = 0;
+                return true;
+            }
+            if (keypr == KeyEvent.VK_ESCAPE) {
+                keypr = 0;
+                return false;
+            }
+            Thread.sleep(50);
+        }
     }
 
     // ==========================================

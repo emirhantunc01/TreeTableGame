@@ -4,10 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a67a6e9c-2502-4eac-b9eb-3b14039c31ec" name="Changes" comment="truth table bug has been solved.">
+    <list default="true" id="a67a6e9c-2502-4eac-b9eb-3b14039c31ec" name="Changes" comment="If the backpack is full the item is placed into the tree">
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_03_05_2026_15_13_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_03_05_2026_15_13__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_5_1_2026_2_07_AM_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_5_1_2026_2_07_AM__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ExpressionTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ExpressionTree.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Player.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Player.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/highscore.txt" beforeDir="false" afterPath="$PROJECT_DIR$/highscore.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DoublyLinkedList.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/DoublyLinkedList.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/GameEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Robot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Robot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/TableScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/TableScreen.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,12 +31,12 @@
   </component>
   <component name="CopilotUserSelectedModel">
     <selectedModels>
-      <entry key="agent-panel" value="GPT-5 mini" />
-      <entry key="chat-panel" value="GPT-5 mini" />
+      <entry key="agent-panel" value="Claude Haiku 4.5" />
+      <entry key="chat-panel" value="Claude Haiku 4.5" />
     </selectedModels>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="43" />
+    <option name="cachedIndexableFilesCount" value="25" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
@@ -45,12 +52,12 @@
     &quot;assignee&quot;: &quot;berkaymtl&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/emirhantunc01/TreeTableGame",
-    "accountId": "df06652c-6e33-4feb-a02c-ade52da11f92"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/emirhantunc01/TreeTableGame&quot;,
+    &quot;accountId&quot;: &quot;df06652c-6e33-4feb-a02c-ade52da11f92&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -77,6 +84,7 @@
     "git-widget-placeholder": "#3 on hafta-4",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/tunce/IdeaProjects/TreeTableGame",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
@@ -104,7 +112,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1777533761602</updated>
-      <workItem from="1777818882962" duration="4416000" />
+      <workItem from="1777818882962" duration="9593000" />
+      <workItem from="1777844879285" duration="4494000" />
+      <workItem from="1777880073808" duration="1582000" />
+      <workItem from="1777895973629" duration="25000" />
+      <workItem from="1777918743185" duration="45000" />
+      <workItem from="1779013708642" duration="302000" />
     </task>
     <task id="LOCAL-00001" summary="truth table bug has been solved.">
       <option name="closed" value="true" />
@@ -122,7 +135,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777819391496</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="If the backpack is full the item is placed into the tree">
+      <option name="closed" value="true" />
+      <created>1777825658897</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1777825658897</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -141,7 +162,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="truth table bug has been solved." />
-    <option name="LAST_COMMIT_MESSAGE" value="truth table bug has been solved." />
+    <MESSAGE value="If the backpack is full the item is placed into the tree" />
+    <option name="LAST_COMMIT_MESSAGE" value="If the backpack is full the item is placed into the tree" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

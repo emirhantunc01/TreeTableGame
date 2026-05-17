@@ -64,26 +64,10 @@ public class TableScreen {
         ConsoleUtils.printString(cn, 2, 22, "Answer with 0 or 1 keys.", colorArrow);
         initialized = true;
     }
-
-    private void generateTruthTable() {
-        for (int i = 0; i < 16; i++) {
-            int a = (i / 8) % 2;
-            int b = (i / 4) % 2;
-            int c = (i / 2) % 2;
-            int d = i % 2;
-
-            truthTable[i][0] = a;
-            truthTable[i][1] = b;
-            truthTable[i][2] = c;
-            truthTable[i][3] = d;
-
-            truthTable[i][4] = evaluatePostfix(postfix, a, b, c, d);
-        }
-    }
-
     /**
      * Evaluates the Postfix expression using the Object-type Stack data structure taught in class.
      */
+
     private int evaluatePostfix(String expr, int valA, int valB, int valC, int valD) {
         // Initialize the Stack class from course materials
         Stack stack = new Stack(50); //
@@ -127,6 +111,22 @@ public class TableScreen {
         return (Integer) stack.pop(); //
     }
 
+    private void generateTruthTable() {
+        for (int i = 0; i < 16; i++) {
+            int a = (i / 8) % 2;
+            int b = (i / 4) % 2;
+            int c = (i / 2) % 2;
+            int d = i % 2;
+
+            truthTable[i][0] = a;
+            truthTable[i][1] = b;
+            truthTable[i][2] = c;
+            truthTable[i][3] = d;
+
+            truthTable[i][4] = evaluatePostfix(postfix, a, b, c, d);
+        }
+    }
+
     /**
      * Called every game loop cycle. Processes the player's keyboard input.
      * @return true: Table screen is completed (can return to Maze)
@@ -134,6 +134,19 @@ public class TableScreen {
     public boolean update(int keypr, Player player) {
         if (!initialized) return false;
         if (completed) return true;
+
+        if (keypr == KeyEvent.VK_K) {
+            if (currentQuestion < hiddenCount) {
+                int row = hiddenRows[currentQuestion];
+                ConsoleUtils.printString(cn, 7, 4 + row, "  ");
+            }
+            currentQuestion = hiddenCount;
+            drawKarnaughMap();
+            ConsoleUtils.printString(cn, 2, 22, "                                                  ");
+            ConsoleUtils.printString(cn, 2, 22, "Karnaugh Map shown. Correct: " + correctCount + "/" + hiddenCount, colorNormal);
+            ConsoleUtils.printString(cn, 2, 24, "Press ENTER to return to Maze.", colorArrow);
+            return false;
+        }
 
         if (currentQuestion < hiddenCount) {
             // Highlight the current question's row
@@ -198,6 +211,14 @@ public class TableScreen {
         }
     }
 
+    /**
+     * Converts Gray code to Binary (2-bit)
+     * Gray: 0->00(0), 1->01(1), 3->11(2), 2->10(3)
+     */
+    private int grayToBinary(int gray) {
+        return gray ^ (gray >> 1);
+    }
+
     public void drawKarnaughMap() {
         int[] rowGray = {0, 1, 3, 2};
         int[] colGray = {0, 1, 3, 2};
@@ -210,17 +231,25 @@ public class TableScreen {
         ConsoleUtils.printString(cn, startX, startY+2, "    +---+---+---+---+");
 
         for (int r = 0; r < 4; r++) {
-            int ab = rowGray[r];
-            String abStr = (ab < 2) ? "0"+ab : ((ab==3)?"11":"10");
+            int abGray = rowGray[r];
+            int abBinary = grayToBinary(abGray);
+            int abA = (abBinary >> 1) & 1;  // A bit
+            int abB = abBinary & 1;         // B bit
+
+            String abStr = "" + abA + abB;
             ConsoleUtils.printString(cn, startX, startY+3+r*2, " " + abStr + " |");
 
             for (int c = 0; c < 4; c++) {
-                int cd = colGray[c];
-                int index = ab * 4 + cd;
+                int cdGray = colGray[c];
+                int cdBinary = grayToBinary(cdGray);
+                int cdC = (cdBinary >> 1) & 1;  // C bit
+                int cdD = cdBinary & 1;         // D bit
+
+                // Calculate truth table index: ABCD in binary
+                int index = abA * 8 + abB * 4 + cdC * 2 + cdD;
                 int result = truthTable[index][4];
 
-                ConsoleUtils.printString(cn, startX + 6 + c*4, startY+3+r*2, String.valueOf(result));
-                ConsoleUtils.printString(cn, startX + 8 + c*4, startY+3+r*2, "|");
+                ConsoleUtils.printString(cn, startX + 5 + c*4, startY+3+r*2, " " + result + " |");
             }
             ConsoleUtils.printString(cn, startX, startY+4+r*2, "    +---+---+---+---+");
         }

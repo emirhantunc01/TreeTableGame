@@ -167,28 +167,30 @@ public class GameEngine {
     private void run() throws InterruptedException {
         while (!isGameOver) {
 
-            // Screen switching keys (1, 2, 3)
-            if (keypr == KeyEvent.VK_1) {
-                currentScreen = 1;
-                ConsoleUtils.clearScreen(cn);
-                needsRedraw = true;
-                keypr = 0;
-            }
-            if (keypr == KeyEvent.VK_2) {
-                currentScreen = 2;
-                ConsoleUtils.clearScreen(cn);
-                // Reset tree if coming back from table or first time
-                if (treeSubmitted) {
-                    treeScreen.resetTree();
-                    treeSubmitted = false;
-                    player.clearBackpack();
+            // Screen switching keys (1, 2, 3) - ONLY allow when NOT in table screen or when table is completed
+            if (currentScreen != 3 || (tableScreen != null && tableScreen.isCompleted())) {
+                if (keypr == KeyEvent.VK_1) {
+                    currentScreen = 1;
+                    ConsoleUtils.clearScreen(cn);
+                    needsRedraw = true;
+                    keypr = 0;
                 }
-                keypr = 0;
-            }
-            if (keypr == KeyEvent.VK_3) {
-                currentScreen = 3;
-                ConsoleUtils.clearScreen(cn);
-                keypr = 0;
+                if (keypr == KeyEvent.VK_2) {
+                    currentScreen = 2;
+                    ConsoleUtils.clearScreen(cn);
+                    // Reset tree if coming back from table or first time
+                    if (treeSubmitted) {
+                        treeScreen.resetTree();
+                        treeSubmitted = false;
+                        player.clearBackpack();
+                    }
+                    keypr = 0;
+                }
+                if (keypr == KeyEvent.VK_3) {
+                    currentScreen = 3;
+                    ConsoleUtils.clearScreen(cn);
+                    keypr = 0;
+                }
             }
 
             if (currentScreen == 1) {

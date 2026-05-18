@@ -167,8 +167,11 @@ public class GameEngine {
     private void run() throws InterruptedException {
         while (!isGameOver) {
 
-            // Screen switching keys (1, 2, 3) - ONLY allow when NOT in table screen or when table is completed
-            if (currentScreen != 3 || (tableScreen != null && tableScreen.isCompleted())) {
+            // Screen switching keys (1, 2, 3)
+            // Allow screen switching UNLESS: in table screen AND table is not null AND table is not completed
+            boolean canSwitch = (currentScreen != 3) || (tableScreen == null) || (tableScreen.isCompleted());
+
+            if (canSwitch) {
                 if (keypr == KeyEvent.VK_1) {
                     currentScreen = 1;
                     ConsoleUtils.clearScreen(cn);
@@ -338,8 +341,8 @@ public class GameEngine {
                     int treeScore = treeScreen.calculateTreeScore();
                     player.addScore(treeScore);
                     treeSubmitted = true; // Mark tree as submitted to prevent re-submission
-                    // Create and initialize the TableScreen
-                    tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore);
+                    // Create and initialize the TableScreen with all sub-expressions
+                    tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore, treeScreen.getAllSubexpressionsPostfix());
                     tableScreen.init();
                     currentScreen = 3; // Switch to Table Screen
                 } else {

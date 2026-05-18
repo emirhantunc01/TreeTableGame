@@ -6,29 +6,32 @@ import java.awt.event.KeyEvent;
 
 /**
  * TableScreen.java
- * Handles the Truth Table generation, Postfix evaluation, and Karnaugh Map display.
- * Uses the custom Stack data structure from course materials.
+ * Handles the Truth Table generation with ALL sub-expressions, postfix evaluation, and Karnaugh Map display.
  */
 public class TableScreen {
     private Console cn;
     private String postfix;
     private int treeScore;
+    private String[] allSubexpressions; // All postfix sub-expressions from tree
 
-    // Truth table: 16 rows (0000 - 1111), 5 columns (A, B, C, D, Result)
-    private int[][] truthTable = new int[16][5];
+    // Truth table: 16 rows (0000 - 1111), columns for (A, B, C, D + all sub-expressions)
+    // Let's limit to reasonable number: ABCD(4) + max 8 sub-expression columns
+    private int[][] truthTable = new int[16][12]; // 4 variables + up to 8 expressions
+    private int expressionCount = 0; // How many sub-expression columns we have
 
-    // Random row indices to be hidden from the player (for the Result column)
-    private boolean[] isHidden = new boolean[16];
+    // Which rows and which columns are hidden
+    private boolean[][] isHidden = new boolean[16][12];
+    private int[] hiddenRows = new int[4];
+    private int hiddenCount = 0;
 
     private Random rnd = new Random();
 
     // State tracking for game loop
     private boolean initialized = false;
     private boolean completed = false;
-    private int currentQuestion = 0;
-    private int[] hiddenRows = new int[4]; // Indices of hidden rows
-    private int hiddenCount = 0;
+    private int currentQuestion = 0; // Which hidden cell we're on
     private int correctCount = 0;
+    private int totalQuestions = 0; // Total hidden cells to fill
 
     private TextAttributes colorNormal = new TextAttributes(Color.WHITE, Color.BLACK);
     private TextAttributes colorHidden = new TextAttributes(Color.YELLOW, Color.BLACK);
@@ -36,10 +39,11 @@ public class TableScreen {
     private TextAttributes colorWrong = new TextAttributes(Color.RED, Color.BLACK);
     private TextAttributes colorArrow = new TextAttributes(Color.CYAN, Color.BLACK);
 
-    public TableScreen(Console cn, String postfix, int treeScore) {
+    public TableScreen(Console cn, String postfix, int treeScore, String[] allSubexpressions) {
         this.cn = cn;
         this.postfix = postfix;
         this.treeScore = treeScore;
+        this.allSubexpressions = allSubexpressions;
     }
 
     // Builds the truth table and draws it to screen (called once by GameEngine)
@@ -47,21 +51,43 @@ public class TableScreen {
         if (initialized) return;
 
         ConsoleUtils.clearScreen(cn);
+
+        // Extract non-empty sub-expressions from allSubexpressions
+        for (int i = 1; i <= 31; i++) {
+            if (allSubexpressions[i] != null && !allSubexpressions[i].isEmpty()) {
+                if (expressionCount < 8) { // Limit to 8 sub-expressions for display
+                    expressionCount++;
+                }
+            }
+        }
+
         generateTruthTable();
 
-        // Hide 4 random rows
+        // Hide 4 random rows (for player to fill ALL columns of those rows)
         hiddenCount = 0;
+        totalQuestions = 0;
         while (hiddenCount < 4) {
             int r = rnd.nextInt(16);
-            if (!isHidden[r]) {
-                isHidden[r] = true;
+            boolean alreadyHidden = false;
+            for (int h = 0; h < hiddenCount; h++) {
+                if (hiddenRows[h] == r) {
+                    alreadyHidden = true;
+                    break;
+                }
+            }
+            if (!alreadyHidden) {
                 hiddenRows[hiddenCount] = r;
+                // Mark all expression columns as hidden for this row
+                for (int col = 4; col < 4 + expressionCount; col++) {
+                    isHidden[r][col] = true;
+                    totalQuestions++;
+                }
                 hiddenCount++;
             }
         }
 
         drawTable();
-        ConsoleUtils.printString(cn, 2, 22, "Answer with 0 or 1 keys.", colorArrow);
+        ConsoleUtils.printString(cn, 2, 25, "Fill the YELLOW cells. Answer with 0 or 1 keys.", colorArrow);
         initialized = true;
     }
     /**
@@ -123,7 +149,14 @@ public class TableScreen {
             truthTable[i][2] = c;
             truthTable[i][3] = d;
 
-            truthTable[i][4] = evaluatePostfix(postfix, a, b, c, d);
+            // Evaluate all sub-expressions for this row
+            int exprIdx = 0;
+            for (int j = 1; j <= 31 && exprIdx < expressionCount; j++) {
+                if (allSubexpressions[j] != null && !allSubexpressions[j].isEmpty()) {
+                    truthTable[i][4 + exprIdx] = evaluatePostfix(allSubexpressions[j], a, b, c, d);
+                    exprIdx++;
+                }
+            }
         }
     }
 
@@ -136,57 +169,69 @@ public class TableScreen {
         if (completed) return true;
 
         if (keypr == KeyEvent.VK_K) {
-            if (currentQuestion < hiddenCount) {
-                int row = hiddenRows[currentQuestion];
-                ConsoleUtils.printString(cn, 7, 4 + row, "  ");
-            }
-            currentQuestion = hiddenCount;
+            // Show Karnaugh map
             drawKarnaughMap();
-            ConsoleUtils.printString(cn, 2, 22, "                                                  ");
-            ConsoleUtils.printString(cn, 2, 22, "Karnaugh Map shown. Correct: " + correctCount + "/" + hiddenCount, colorNormal);
-            ConsoleUtils.printString(cn, 2, 24, "Press ENTER to return to Maze.", colorArrow);
+            ConsoleUtils.printString(cn, 2, 24, "                                                  ");
+            ConsoleUtils.printString(cn, 2, 24, "Karnaugh Map. Correct: " + correctCount + "/" + totalQuestions, colorNormal);
+            ConsoleUtils.printString(cn, 2, 25, "Press ENTER to return to Maze.", colorArrow);
             return false;
         }
 
-        if (currentQuestion < hiddenCount) {
-            // Highlight the current question's row
-            int row = hiddenRows[currentQuestion];
-            int drawY = 4 + row;
-            ConsoleUtils.printString(cn, 7, drawY, ">>", colorArrow);
+        // Find next hidden cell to fill
+        if (currentQuestion < totalQuestions) {
+            // Iterate through all rows and columns to find the currentQuestion-th hidden cell
+            int cellsFound = 0;
+            for (int r = 0; r < 16 && cellsFound <= currentQuestion; r++) {
+                for (int c = 4; c < 4 + expressionCount && cellsFound <= currentQuestion; c++) {
+                    if (isHidden[r][c]) {
+                        if (cellsFound == currentQuestion) {
+                            // This is the cell to answer
+                            int drawY = 4 + r;
+                            int colWidth = 7;
+                            int drawX = 8 + (c - 4) * colWidth;
 
-            // Check the answer when 0 or 1 is pressed
-            if (keypr == KeyEvent.VK_0 || keypr == KeyEvent.VK_NUMPAD0 ||
-                keypr == KeyEvent.VK_1 || keypr == KeyEvent.VK_NUMPAD1) {
+                            // Highlight with arrow
+                            ConsoleUtils.printString(cn, drawX, drawY, ">>", colorArrow);
 
-                int answer = (keypr == KeyEvent.VK_1 || keypr == KeyEvent.VK_NUMPAD1) ? 1 : 0;
-                int correct = truthTable[row][4];
+                            // Check answer when 0 or 1 pressed
+                            if (keypr == KeyEvent.VK_0 || keypr == KeyEvent.VK_NUMPAD0 ||
+                                keypr == KeyEvent.VK_1 || keypr == KeyEvent.VK_NUMPAD1) {
 
-                // Clear the arrow marker
-                ConsoleUtils.printString(cn, 7, drawY, "  ");
+                                int answer = (keypr == KeyEvent.VK_1 || keypr == KeyEvent.VK_NUMPAD1) ? 1 : 0;
+                                int correct = truthTable[r][c];
 
-                if (answer == correct) {
-                    correctCount++;
-                    player.addScore(3); // Correct answer: +3 points (spec requirement)
-                    ConsoleUtils.printString(cn, 9, drawY, String.valueOf(answer), colorCorrect);
-                } else {
-                    player.addScore(-2); // Wrong answer penalty: -2 points (spec requirement)
-                    ConsoleUtils.printString(cn, 9, drawY, String.valueOf(answer), colorWrong);
-                    // Show the correct answer as well
-                    ConsoleUtils.printString(cn, 11, drawY, "(" + correct + ")", colorNormal);
-                }
-                currentQuestion++;
+                                // Clear arrow
+                                ConsoleUtils.printString(cn, drawX, drawY, "  ");
 
-                // If all questions answered, draw the Karnaugh map
-                if (currentQuestion >= hiddenCount) {
-                    drawKarnaughMap();
-                    ConsoleUtils.printString(cn, 2, 22, "                                                  "); // Clear old message
-                    ConsoleUtils.printString(cn, 2, 22, "Correct: " + correctCount + "/" + hiddenCount +
-                        "  |  Tree Score: " + treeScore, colorNormal);
-                    ConsoleUtils.printString(cn, 2, 24, "Press ENTER to return to Maze.", colorArrow);
+                                if (answer == correct) {
+                                    correctCount++;
+                                    player.addScore(3);
+                                    ConsoleUtils.printString(cn, drawX, drawY, String.valueOf(answer), colorCorrect);
+                                } else {
+                                    player.addScore(-2);
+                                    ConsoleUtils.printString(cn, drawX, drawY, String.valueOf(answer), colorWrong);
+                                    ConsoleUtils.printString(cn, drawX + 3, drawY, "(" + correct + ")", colorNormal);
+                                }
+
+                                isHidden[r][c] = false;
+                                currentQuestion++;
+
+                                if (currentQuestion >= totalQuestions) {
+                                    drawTable(); // Redraw to show all filled cells
+                                    ConsoleUtils.printString(cn, 2, 24, "                                                  ");
+                                    ConsoleUtils.printString(cn, 2, 24, "All done! Correct: " + correctCount + "/" + totalQuestions +
+                                        "  |  Tree: " + treeScore, colorNormal);
+                                    ConsoleUtils.printString(cn, 2, 25, "Press K for Karnaugh Map or ENTER to return to Maze.", colorArrow);
+                                }
+                            }
+                            return false;
+                        }
+                        cellsFound++;
+                    }
                 }
             }
         } else {
-            // All questions answered, wait for ENTER
+            // All answered, wait for input
             if (keypr == KeyEvent.VK_ENTER) {
                 completed = true;
                 return true;
@@ -196,18 +241,42 @@ public class TableScreen {
     }
 
     public void drawTable() {
-        ConsoleUtils.printString(cn, 2, 2, "ABCD | Result");
-        ConsoleUtils.printString(cn, 2, 3, "-----+-------");
+        // Draw header: ABCD | expr1 | expr2 | ...
+        String header = "ABCD |";
+        int colX = 8; // Start position for expressions
 
+        int exprIdx = 0;
+        for (int j = 1; j <= 31 && exprIdx < expressionCount; j++) {
+            if (allSubexpressions[j] != null && !allSubexpressions[j].isEmpty()) {
+                String expr = allSubexpressions[j];
+                // Keep expression short  (max 6 chars)
+                if (expr.length() > 6) expr = expr.substring(0, 6);
+                header = header + expr + "|";
+                exprIdx++;
+            }
+        }
+        ConsoleUtils.printString(cn, 2, 2, header);
+
+        // Separator line
+        String sep = "-----+";
+        for (int i = 0; i < expressionCount; i++) {
+            sep += "------+";
+        }
+        ConsoleUtils.printString(cn, 2, 3, sep);
+
+        // Draw rows with values
         for (int i = 0; i < 16; i++) {
             String abcd = "" + truthTable[i][0] + truthTable[i][1] + truthTable[i][2] + truthTable[i][3];
-            ConsoleUtils.printString(cn, 2, 4 + i, abcd + " | ");
+            String row = abcd + " | ";
 
-            if (isHidden[i]) {
-                ConsoleUtils.printString(cn, 9, 4 + i, "?", colorHidden);
-            } else {
-                ConsoleUtils.printString(cn, 9, 4 + i, String.valueOf(truthTable[i][4]),    colorNormal);
+            for (int col = 4; col < 4 + expressionCount; col++) {
+                if (isHidden[i][col]) {
+                    row += "?  |";
+                } else {
+                    row += truthTable[i][col] + "  |";
+                }
             }
+            ConsoleUtils.printString(cn, 2, 4 + i, row);
         }
     }
 
@@ -233,8 +302,8 @@ public class TableScreen {
         for (int r = 0; r < 4; r++) {
             int abGray = rowGray[r];
             int abBinary = grayToBinary(abGray);
-            int abA = (abBinary >> 1) & 1;  // A bit
-            int abB = abBinary & 1;         // B bit
+            int abA = (abBinary >> 1) & 1;
+            int abB = abBinary & 1;
 
             String abStr = "" + abA + abB;
             ConsoleUtils.printString(cn, startX, startY+3+r*2, " " + abStr + " |");
@@ -242,12 +311,13 @@ public class TableScreen {
             for (int c = 0; c < 4; c++) {
                 int cdGray = colGray[c];
                 int cdBinary = grayToBinary(cdGray);
-                int cdC = (cdBinary >> 1) & 1;  // C bit
-                int cdD = cdBinary & 1;         // D bit
+                int cdC = (cdBinary >> 1) & 1;
+                int cdD = cdBinary & 1;
 
                 // Calculate truth table index: ABCD in binary
                 int index = abA * 8 + abB * 4 + cdC * 2 + cdD;
-                int result = truthTable[index][4];
+                // Get the last (result) column
+                int result = truthTable[index][4 + expressionCount - 1];
 
                 ConsoleUtils.printString(cn, startX + 5 + c*4, startY+3+r*2, " " + result + " |");
             }
@@ -264,6 +334,11 @@ public class TableScreen {
         currentQuestion = 0;
         correctCount = 0;
         hiddenCount = 0;
-        for (int i = 0; i < 16; i++) isHidden[i] = false;
+        totalQuestions = 0;
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 12; j++) {
+                isHidden[i][j] = false;
+            }
+        }
     }
 }

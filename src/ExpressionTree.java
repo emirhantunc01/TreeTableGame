@@ -184,6 +184,22 @@ public class ExpressionTree {
         return result;
     }
 
+    /**
+     * Gets all non-empty sub-expressions' postfix forms (sorted by node index)
+     * Returns array where index i contains the postfix of the subtree rooted at node i
+     */
+    public String[] getAllSubexpressionsPostfix() {
+        String[] subexpressions = new String[32]; // Index 0 unused, 1-31 for nodes
+        for (int i = 1; i <= 31; i++) {
+            if (tree[i] != ' ') {
+                subexpressions[i] = buildPostfix(i);
+            } else {
+                subexpressions[i] = "";
+            }
+        }
+        return subexpressions;
+    }
+
     // --- DRAW TO SCREEN ---
 
     public void draw() {

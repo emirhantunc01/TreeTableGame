@@ -52,13 +52,17 @@ public class TableScreen {
 
         ConsoleUtils.clearScreen(cn);
 
-        // Extract non-empty sub-expressions from allSubexpressions
-        for (int i = 1; i <= 31; i++) {
+        // Count non-empty sub-expressions from allSubexpressions
+        expressionCount = 0;
+        for (int i = 1; i <= 31 && expressionCount < 8; i++) {
             if (allSubexpressions[i] != null && !allSubexpressions[i].isEmpty()) {
-                if (expressionCount < 8) { // Limit to 8 sub-expressions for display
-                    expressionCount++;
-                }
+                expressionCount++;
             }
+        }
+
+        if (expressionCount == 0) {
+            // Fallback: no valid expressions found, at least show final result
+            expressionCount = 1;
         }
 
         generateTruthTable();
@@ -149,7 +153,7 @@ public class TableScreen {
             truthTable[i][2] = c;
             truthTable[i][3] = d;
 
-            // Evaluate all sub-expressions for this row
+            // Evaluate all sub-expressions for this row (limit to expressionCount)
             int exprIdx = 0;
             for (int j = 1; j <= 31 && exprIdx < expressionCount; j++) {
                 if (allSubexpressions[j] != null && !allSubexpressions[j].isEmpty()) {
@@ -243,13 +247,13 @@ public class TableScreen {
     public void drawTable() {
         // Draw header: ABCD | expr1 | expr2 | ...
         String header = "ABCD |";
-        int colX = 8; // Start position for expressions
 
+        // Add expression headers
         int exprIdx = 0;
         for (int j = 1; j <= 31 && exprIdx < expressionCount; j++) {
             if (allSubexpressions[j] != null && !allSubexpressions[j].isEmpty()) {
                 String expr = allSubexpressions[j];
-                // Keep expression short  (max 6 chars)
+                // Keep expression short (max 6 chars)
                 if (expr.length() > 6) expr = expr.substring(0, 6);
                 header = header + expr + "|";
                 exprIdx++;
@@ -295,6 +299,8 @@ public class TableScreen {
         int startX = 30;
         int startY = 4;
 
+        int lastExprCol = 4 + expressionCount - 1; // Index of final result column
+
         ConsoleUtils.printString(cn, startX, startY, "   CD");
         ConsoleUtils.printString(cn, startX, startY+1, "AB    00  01  11  10");
         ConsoleUtils.printString(cn, startX, startY+2, "    +---+---+---+---+");
@@ -316,8 +322,8 @@ public class TableScreen {
 
                 // Calculate truth table index: ABCD in binary
                 int index = abA * 8 + abB * 4 + cdC * 2 + cdD;
-                // Get the last (result) column
-                int result = truthTable[index][4 + expressionCount - 1];
+                // Get the final result column
+                int result = truthTable[index][lastExprCol];
 
                 ConsoleUtils.printString(cn, startX + 5 + c*4, startY+3+r*2, " " + result + " |");
             }

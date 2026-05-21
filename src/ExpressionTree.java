@@ -115,14 +115,29 @@ public class ExpressionTree {
         int varCount = 0;
         boolean hasDepth3Node = false;
 
+        // Rule: Root cannot be empty
+        if (tree[1] == ' ') return false;
+
         for (int i = 1; i <= 31; i++) {
             char c = tree[i];
             if (c != ' ') {
-                // Depth 3 means nodes at indices 4-7 (or deeper: 8-31)
                 if (i >= 4) hasDepth3Node = true;
-                if (c == 'A' || c == 'B' || c == 'C' || c == 'D' ||
-                        c == 'a' || c == 'b' || c == 'c' || c == 'd') {
+                
+                // Rule: All nodes must be connected to the root (no floating subtrees)
+                if (i > 1 && tree[i / 2] == ' ') return false;
+
+                if (isVariable(c)) {
                     varCount++;
+                    // Variables MUST be leaves (no children)
+                    if (hasChild(i)) return false;
+                } else if (c == '~') {
+                    // Unary operator MUST have exactly 1 child
+                    if (!hasExactlyOneChild(i)) return false;
+                } else if (isOperator(c)) {
+                    // Binary operators MUST have exactly 2 children
+                    if (!hasExactlyTwoChildren(i)) return false;
+                } else {
+                    return false; // Unknown character
                 }
             }
         }
@@ -131,10 +146,26 @@ public class ExpressionTree {
         if (varCount < 3) return false;
 
         // Rule 2: Minimum depth is 3.
-        // Depth 3 means we must have at least one node in indices 4 to 31.
         if (!hasDepth3Node) return false;
 
         return true;
+    }
+
+    private boolean hasExactlyOneChild(int index) {
+        boolean hasLeft = index * 2 <= 31 && tree[index * 2] != ' ';
+        boolean hasRight = index * 2 + 1 <= 31 && tree[index * 2 + 1] != ' ';
+        return (hasLeft && !hasRight) || (!hasLeft && hasRight);
+    }
+
+    private boolean hasExactlyTwoChildren(int index) {
+        boolean hasLeft = index * 2 <= 31 && tree[index * 2] != ' ';
+        boolean hasRight = index * 2 + 1 <= 31 && tree[index * 2 + 1] != ' ';
+        return hasLeft && hasRight;
+    }
+
+    private boolean isVariable(char c) {
+        return c == 'A' || c == 'B' || c == 'C' || c == 'D' ||
+               c == 'a' || c == 'b' || c == 'c' || c == 'd';
     }
 
     // Calculates the tree's score (node count * 10)

@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a67a6e9c-2502-4eac-b9eb-3b14039c31ec" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/copilotDiffState.xml" beforeDir="false" />
+    <list default="true" id="a67a6e9c-2502-4eac-b9eb-3b14039c31ec" name="Changes" comment="If the backpack is full the item is placed into the tree">
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Enigma_Edited2.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Enigma_Edited2.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TreeTableGame.iml" beforeDir="false" afterPath="$PROJECT_DIR$/TreeTableGame.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ExpressionTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ExpressionTree.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/GameEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/GameEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/InputQueue.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/InputQueue.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/TableScreen.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/TableScreen.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -17,44 +17,8 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="CopilotChats">
-    <option name="panelChat">
-      <chat>
-        <option name="activeSessionId" value="363d451a-8915-4d4e-a0b6-b7eeb7cb3d0a" />
-        <option name="sessions">
-          <session>
-            <option name="chatType" value="PANEL" />
-            <option name="id" value="363d451a-8915-4d4e-a0b6-b7eeb7cb3d0a" />
-            <option name="modeId" value="Agent" />
-            <option name="modelType" value="builtin_family" />
-            <option name="modelValue" value="claude-haiku-4.5" />
-            <option name="status" value="Completed" />
-            <option name="targetType" value="LOCAL" />
-          </session>
-          <session>
-            <option name="chatType" value="PANEL" />
-            <option name="id" value="cde119b2-813d-4b11-94e8-e30ba540854d" />
-            <option name="modeId" value="Agent" />
-            <option name="modelType" value="builtin_family" />
-            <option name="modelValue" value="claude-haiku-4.5" />
-            <option name="targetType" value="LOCAL" />
-          </session>
-          <session>
-            <option name="chatType" value="PANEL" />
-            <option name="id" value="85c1e88f-83a7-4d89-900f-9720eb3d6e2a" />
-            <option name="modeId" value="Agent" />
-            <option name="modelType" value="builtin_family" />
-            <option name="modelValue" value="claude-haiku-4.5" />
-            <option name="targetType" value="LOCAL" />
-          </session>
-        </option>
-        <option name="type" value="PANEL" />
-      </chat>
-    </option>
-  </component>
   <component name="CopilotPersistence">
     <persistenceIdMap>
-      <entry key="_/Users/kagan/Desktop/Java Projects/TreeTableGame" value="3DtAOorI3SMRMLJ2dOFYlLpV2sn" />
       <entry key="_C:/Users/tunce/IdeaProjects/TreeTableGame" value="3D4G7c2Q7COPJW6JEFvwsxzx4zu" />
     </persistenceIdMap>
   </component>
@@ -68,16 +32,15 @@
     </selectedModels>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="25" />
+    <option name="cachedIndexableFilesCount" value="27" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="hafta-6" />
+        <entry key="$PROJECT_DIR$" value="hafta-7" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -87,8 +50,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/emirhantunc01/TreeTableGame.git&quot;,
-    &quot;accountId&quot;: &quot;3c3b9267-5506-456c-9ff0-d54dbabb4dc4&quot;
+    &quot;url&quot;: &quot;https://github.com/emirhantunc01/TreeTableGame&quot;,
+    &quot;accountId&quot;: &quot;df06652c-6e33-4feb-a02c-ade52da11f92&quot;
   }
 }</component>
   <component name="McpProjectServerCommands">
@@ -100,36 +63,21 @@
   &quot;associatedIndex&quot;: 3
 }</component>
   <component name="ProjectId" id="3D4G7c2Q7COPJW6JEFvwsxzx4zu" />
-  <component name="ProjectSessionTemplates">
-    <option name="panelTemplate">
-      <template>
-        <option name="modeId" value="Agent" />
-        <option name="model">
-          <model>
-            <option name="modelType" value="builtin_family" />
-            <option name="modelValue" value="claude-haiku-4.5" />
-          </model>
-        </option>
-        <option name="targetType" value="LOCAL" />
-      </template>
-    </option>
-  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Application.Main.executor": "Debug",
+    "Application.Main.executor": "Run",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "hafta-7",
+    "git-widget-placeholder": "hafta-7-2",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/tunce/IdeaProjects/TreeTableGame",
@@ -140,7 +88,7 @@
     "project.structure.last.edited": "Libraries",
     "project.structure.proportion": "0.15429688",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.customization.CustomizationConfigurable",
     "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
   }
@@ -202,19 +150,7 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="FILTERS">
-                <map>
-                  <entry key="branch">
-                    <value>
-                      <list>
-                        <option value="origin/hafta-6" />
-                      </list>
-                    </value>
-                  </entry>
-                </map>
-              </option>
-            </State>
+            <State />
           </value>
         </entry>
       </map>
@@ -231,7 +167,7 @@
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/Main.java</url>
           <line>5</line>
-          <option name="timeStamp" value="4" />
+          <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

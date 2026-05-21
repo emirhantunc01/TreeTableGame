@@ -38,7 +38,8 @@ public class GameEngine {
     private boolean treeSubmitted = false; // Flag to prevent re-submitting the same tree
 
     // For keyboard input
-    private int keypr = 0;
+    private volatile int keypr = 0;
+    private volatile char typedChar = 0;
     private Random rnd = new Random();
     // Name input state (used before main loop)
     private volatile boolean namingMode = false;
@@ -96,6 +97,8 @@ public class GameEngine {
                         cn.getTextWindow().output(pos, nameInputY, ch);
                         cn.getTextWindow().setCursorPosition(pos + 1, nameInputY);
                     }
+                } else {
+                    typedChar = e.getKeyChar();
                 }
             }
         });
@@ -167,43 +170,41 @@ public class GameEngine {
     private void run() throws InterruptedException {
         while (!isGameOver) {
 
-            // Screen switching keys (1, 2, 3)
-            // Allow screen switching UNLESS: in table screen AND table is not null AND table is not completed
-            boolean canSwitch = (currentScreen != 3) || (tableScreen == null) || (tableScreen.isCompleted());
+            // Capture key press once per iteration to prevent race conditions
+            // between the AWT KeyListener thread and the game loop thread
+            int key = keypr;
+            keypr = 0;
+            char ch = typedChar;
+            typedChar = 0;
 
-            if (canSwitch) {
-                if (keypr == KeyEvent.VK_1) {
+            // Screen switching keys (1, 2, 3) - ONLY active outside Table Screen or if Table Screen is not initialized
+            if (currentScreen != 3 || tableScreen == null) {
+                if (key == KeyEvent.VK_1) {
                     currentScreen = 1;
                     ConsoleUtils.clearScreen(cn);
                     needsRedraw = true;
-                    keypr = 0;
+                    key = 0;
                 }
-                if (keypr == KeyEvent.VK_2) {
+                if (key == KeyEvent.VK_2) {
                     currentScreen = 2;
                     ConsoleUtils.clearScreen(cn);
-                    // Reset tree if coming back from table or first time
-                    if (treeSubmitted) {
-                        treeScreen.resetTree();
-                        treeSubmitted = false;
-                        player.clearBackpack();
-                    }
-                    keypr = 0;
+                    key = 0;
                 }
-                if (keypr == KeyEvent.VK_3) {
+                if (key == KeyEvent.VK_3) {
                     currentScreen = 3;
                     ConsoleUtils.clearScreen(cn);
-                    keypr = 0;
+                    key = 0;
                 }
             }
 
             if (currentScreen == 1) {
-                updateMazeScreen();
+                updateMazeScreen(key);
                 Thread.sleep(100); // 1 Time Unit = 100 ms
             } else if (currentScreen == 2) {
-                updateTreeScreen();
-                Thread.sleep(100); // Tree screen doesn't advance time, but waits for input
+                updateTreeScreen(key);
+                Thread.sleep(100);
             } else if (currentScreen == 3) {
-                updateTableScreen();
+                updateTableScreen(key, ch);
                 Thread.sleep(100);
             }
         }
@@ -247,7 +248,7 @@ public class GameEngine {
     // ==========================================
     // MAZE SCREEN LOGIC
     // ==========================================
-    private void updateMazeScreen() {
+    private void updateMazeScreen(int key) {
         timeUnit++;
         if (timeUnit % 10 == 0) seconds++; // Every 10 units = 1 second (1000ms)
 
@@ -260,19 +261,18 @@ public class GameEngine {
         }
 
         // 2. Player Movement and Input (every 1 time unit)
-        if (keypr != 0) {
-            if (keypr == KeyEvent.VK_SPACE) {
+        if (key != 0) {
+            if (key == KeyEvent.VK_SPACE) {
                 // Fire fireball
                 fireballManager.fire(player.getX(), player.getY(), player.getLastDx(), player.getLastDy());
-            } else if (keypr == KeyEvent.VK_M) {
+            } else if (key == KeyEvent.VK_M) {
                 // Toggle Storage Mode
                 player.toggleStorageMode();
             } else {
                 // Arrow Keys
-                player.move(keypr);
+                player.move(key);
                 checkItemCollection();
             }
-            keypr = 0;
         }
         player.draw(); // Keep player always on top
 
@@ -308,16 +308,16 @@ public class GameEngine {
     // ==========================================
     // TREE SCREEN LOGIC
     // ==========================================
-    private void updateTreeScreen() {
+    private void updateTreeScreen(int key) {
         treeScreen.draw();
         drawBackpackOnTreeScreen(); // Show backpack contents
         // Draw HUD on tree screen (Input Queue is only for Maze mode)
         drawHUD();
 
-        if (keypr != 0) {
-            if (keypr == KeyEvent.VK_W || keypr == KeyEvent.VK_A || keypr == KeyEvent.VK_D) {
-                if (treeScreen.moveCursor((char) keypr)) player.addScore(-1); // Penalty point
-            } else if (keypr == KeyEvent.VK_T) {
+        if (key != 0) {
+            if (key == KeyEvent.VK_W || key == KeyEvent.VK_A || key == KeyEvent.VK_D) {
+                if (treeScreen.moveCursor((char) key)) player.addScore(-1); // Penalty point
+            } else if (key == KeyEvent.VK_T) {
                 // Take last item from Backpack and place it into the tree
                 if (player.getBackpackCount() > 0) {
                     char symbol = player.removeFromBackpack(player.getBackpackCount() - 1);
@@ -326,7 +326,7 @@ public class GameEngine {
                         player.addToBackpack(symbol);
                     }
                 }
-            } else if (keypr == KeyEvent.VK_R) {
+            } else if (key == KeyEvent.VK_R) {
                 // Remove from tree and put in backpack
                 char c = treeScreen.takeSymbol();
                 if (c != ' ') {
@@ -336,48 +336,46 @@ public class GameEngine {
                         treeScreen.placeSymbol(c);
                     }
                 }
-            } else if (keypr == KeyEvent.VK_F) {
+            } else if (key == KeyEvent.VK_F) {
                 if (treeScreen.finishTree()) {
                     int treeScore = treeScreen.calculateTreeScore();
                     player.addScore(treeScore);
                     treeSubmitted = true; // Mark tree as submitted to prevent re-submission
-                    // Create and initialize the TableScreen with all sub-expressions
-                    tableScreen = new TableScreen(
-                            cn,
-                            treeScreen.getPostfix(),
-                            treeScore,
-                            treeScreen.getTableExpressionPostfixes(),
-                            treeScreen.getTableExpressionHeaders());
+                    // Create and initialize the TableScreen
+                    tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore,
+                            treeScreen.getTableExpressionPostfixes(), treeScreen.getTableExpressionHeaders());
                     tableScreen.init();
                     currentScreen = 3; // Switch to Table Screen
                 } else {
                     player.addScore(-10); // Penalty for invalid tree
                 }
             }
-            keypr = 0;
         }
     }
 
     // ==========================================
     // TABLE SCREEN LOGIC
     // ==========================================
-    private void updateTableScreen() {
+    private void updateTableScreen(int key, char ch) {
         if (tableScreen == null) {
             // Pressed 3 directly before the tree was completed
             ConsoleUtils.printString(cn, 5, 5, "No expression tree submitted.");
             ConsoleUtils.printString(cn, 5, 7, "Press 2 to go to Tree Screen first.");
-            if (keypr != 0) keypr = 0;
             return;
         }
 
         // Update TableScreen; return to Maze if completed
-        if (tableScreen.update(keypr, player)) {
+        if (tableScreen.update(key, ch, player)) {
             currentScreen = 1;
             needsRedraw = true;
             ConsoleUtils.clearScreen(cn);
             tableScreen = null; // Reset for the next round
+            
+            // Reset tree and backpack for the next round
+            treeScreen.resetTree();
+            treeSubmitted = false;
+            player.clearBackpack();
         }
-        keypr = 0;
     }
 
     // ==========================================

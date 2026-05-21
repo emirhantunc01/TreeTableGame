@@ -46,6 +46,15 @@ public class TableScreen {
     private int correctCount = 0;
     private int totalQuestions = 0;
 
+    // Phase tracking for game flow
+    private static final int PHASE_QUESTIONS = 0;
+    private static final int PHASE_KARNAUGH_WAIT = 1;
+    private static final int PHASE_KARNAUGH = 2;
+    private static final int PHASE_RESULT = 3;
+    private static final int PHASE_COMPLETED = 4;
+    private int phase = PHASE_QUESTIONS;
+    private StringBuilder expressionBuffer = new StringBuilder();
+
     private TextAttributes colorNormal = new TextAttributes(Color.WHITE, Color.BLACK);
     private TextAttributes colorHidden = new TextAttributes(Color.YELLOW, Color.BLACK);
     private TextAttributes colorCorrect = new TextAttributes(Color.GREEN, Color.BLACK);
@@ -254,41 +263,76 @@ public class TableScreen {
      * Called every game loop cycle. Processes the player's keyboard input.
      * @return true: Table screen is completed (can return to Maze)
      */
-    public boolean update(int keypr, Player player) {
+    public boolean update(int key, char typedChar, Player player) {
         if (!initialized) return false;
-        if (completed) return true;
+        if (phase == PHASE_COMPLETED) return true;
 
-        if (keypr == KeyEvent.VK_K && currentQuestion >= totalQuestions) {
-            drawKarnaughMap();
-            return false;
-        }
-
-        if (currentQuestion < totalQuestions) {
-            if (isAnswerKey(keypr)) {
-                answerCurrentQuestion(keypr, player);
+        if (phase == PHASE_QUESTIONS) {
+            if (currentQuestion < totalQuestions && isAnswerKey(key)) {
+                answerCurrentQuestion(key, player);
+            }
+            if (currentQuestion >= totalQuestions) {
+                phase = PHASE_KARNAUGH_WAIT;
             }
             return false;
         }
 
-        if (keypr == KeyEvent.VK_ENTER) {
-            completed = true;
-            return true;
+        if (phase == PHASE_KARNAUGH_WAIT) {
+            if (key == KeyEvent.VK_ENTER) {
+                drawKarnaughMap();
+                phase = PHASE_KARNAUGH;
+            }
+            return false;
+        }
+
+        if (phase == PHASE_KARNAUGH) {
+            if (key == KeyEvent.VK_BACK_SPACE) {
+                if (expressionBuffer.length() > 0) {
+                    expressionBuffer.deleteCharAt(expressionBuffer.length() - 1);
+                    redrawExpressionInput();
+                }
+            } else if (key == KeyEvent.VK_ENTER && expressionBuffer.length() > 0) {
+                boolean correct = evaluateSimplifiedExpression(expressionBuffer.toString());
+                if (correct) {
+                    player.addScore(80);
+                    drawExpressionResult("Correct! Score += 80. Press ENTER to return.", colorCorrect);
+                } else {
+                    String correctExpr = generateSimplifiedExpression();
+                    drawExpressionResult("Wrong expression. Press ENTER to return.", colorWrong, correctExpr);
+                }
+                phase = PHASE_RESULT;
+            } else if (typedChar != 0) {
+                char ch = Character.toUpperCase(typedChar);
+                if (isValidExpressionChar(ch) && expressionBuffer.length() < 30) {
+                    expressionBuffer.append(ch);
+                    redrawExpressionInput();
+                }
+            }
+            return false;
+        }
+
+        if (phase == PHASE_RESULT) {
+            if (key == KeyEvent.VK_ENTER) {
+                phase = PHASE_COMPLETED;
+                return true;
+            }
+            return false;
         }
 
         return false;
     }
 
-    private boolean isAnswerKey(int keypr) {
-        return keypr == KeyEvent.VK_0 || keypr == KeyEvent.VK_NUMPAD0 ||
-               keypr == KeyEvent.VK_1 || keypr == KeyEvent.VK_NUMPAD1;
+    private boolean isAnswerKey(int key) {
+        return key == KeyEvent.VK_0 || key == KeyEvent.VK_NUMPAD0 ||
+               key == KeyEvent.VK_1 || key == KeyEvent.VK_NUMPAD1;
     }
 
-    private void answerCurrentQuestion(int keypr, Player player) {
+    private void answerCurrentQuestion(int key, Player player) {
         int exprIdx = currentQuestion;
         int row = hiddenQuestionRows[exprIdx];
         int col = VARIABLE_COLS + exprIdx;
 
-        int answer = (keypr == KeyEvent.VK_1 || keypr == KeyEvent.VK_NUMPAD1) ? 1 : 0;
+        int answer = (key == KeyEvent.VK_1 || key == KeyEvent.VK_NUMPAD1) ? 1 : 0;
         int correct = truthTable[row][col];
 
         if (answer == correct) {
@@ -304,8 +348,8 @@ public class TableScreen {
         drawTable();
 
         if (currentQuestion >= totalQuestions) {
-            printStatus("All done. Correct: " + correctCount + "/" + totalQuestions +
-                    "  Tree: " + treeScore + "  Press K for Karnaugh Map or ENTER to return.", colorArrow);
+            printStatus("All done! Correct: " + correctCount + "/" + totalQuestions +
+                    "  Press ENTER for Karnaugh Map.", colorArrow);
         } else {
             TextAttributes resultColor = (answer == correct) ? colorCorrect : colorWrong;
             drawCellValue(row, exprIdx, String.valueOf(answer), resultColor);
@@ -479,16 +523,16 @@ public class TableScreen {
         ConsoleUtils.printString(cn, startX, startY + 2, "    +---+---+---+---+");
 
         for (int r = 0; r < 4; r++) {
-            int abBinary = grayToBinary(rowGray[r]);
-            int abA = (abBinary >> 1) & 1;
-            int abB = abBinary & 1;
+            int abGray = rowGray[r];
+            int abA = (abGray >> 1) & 1;
+            int abB = abGray & 1;
 
             ConsoleUtils.printString(cn, startX, startY + 3 + r * 2, " " + abA + abB + " |");
 
             for (int c = 0; c < 4; c++) {
-                int cdBinary = grayToBinary(colGray[c]);
-                int cdC = (cdBinary >> 1) & 1;
-                int cdD = cdBinary & 1;
+                int cdGray = colGray[c];
+                int cdC = (cdGray >> 1) & 1;
+                int cdD = cdGray & 1;
 
                 int index = abA * 8 + abB * 4 + cdC * 2 + cdD;
                 int result = truthTable[index][lastExprCol];
@@ -498,19 +542,24 @@ public class TableScreen {
             ConsoleUtils.printString(cn, startX, startY + 4 + r * 2, "    +---+---+---+---+");
         }
 
-        ConsoleUtils.printString(cn, 3, 25, "Press ENTER to return to Maze.", colorArrow);
+        // Simplified expression input area (to the right of the map)
+        ConsoleUtils.printString(cn, 40, 9, "Simplified expression:", colorNormal);
+        redrawExpressionInput();
+
+        ConsoleUtils.printString(cn, 3, 25, "Type expression (e.g. A'B+C'D) then press ENTER.", colorArrow);
     }
 
     public boolean isCompleted() {
-        return completed;
+        return phase == PHASE_COMPLETED;
     }
 
     public void reset() {
         initialized = false;
-        completed = false;
+        phase = PHASE_QUESTIONS;
         currentQuestion = 0;
         correctCount = 0;
         totalQuestions = 0;
+        expressionBuffer = new StringBuilder();
         resetHiddenCells();
     }
 
@@ -523,5 +572,309 @@ public class TableScreen {
                 isHidden[i][j] = false;
             }
         }
+    }
+
+    // --- Simplified Expression Input and Evaluation ---
+
+    private void redrawExpressionInput() {
+        int x = 40;
+        int y = 10;
+        // Clear the input area
+        ConsoleUtils.printString(cn, x, y, "                              ", colorNormal);
+        // Draw the current expression with cursor
+        String expr = expressionBuffer.toString();
+        if (expr.isEmpty()) {
+            ConsoleUtils.printString(cn, x, y, "_", colorHidden);
+        } else {
+            ConsoleUtils.printString(cn, x, y, expr + "_", colorHidden);
+        }
+    }
+
+    private void drawExpressionResult(String text, TextAttributes color) {
+        drawExpressionResult(text, color, null);
+    }
+
+    private void drawExpressionResult(String text, TextAttributes color, String correctExpr) {
+        ConsoleUtils.printString(cn, 3, 25, repeat(' ', 96));
+        ConsoleUtils.printString(cn, 3, 25, text, color);
+        // Show score or correct answer area
+        ConsoleUtils.printString(cn, 40, 12, "                              ");
+        ConsoleUtils.printString(cn, 40, 13, "                              ");
+        if (color == colorCorrect) {
+            ConsoleUtils.printString(cn, 40, 13, "Score += 80", colorCorrect);
+        } else if (correctExpr != null) {
+            ConsoleUtils.printString(cn, 40, 12, "Correct answer:", colorNormal);
+            ConsoleUtils.printString(cn, 40, 13, correctExpr, colorCorrect);
+        }
+    }
+
+    private boolean isValidExpressionChar(char ch) {
+        return ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' ||
+               ch == '\'' || ch == '+' || ch == ' ';
+    }
+
+    /**
+     * Evaluates the player's simplified expression against the truth table.
+     * Returns true if the expression produces the same output as the last
+     * expression column for all 16 input combinations.
+     */
+    private boolean evaluateSimplifiedExpression(String expr) {
+        int lastExprCol = VARIABLE_COLS + expressionCount - 1;
+
+        for (int i = 0; i < ROW_COUNT; i++) {
+            int a = truthTable[i][0];
+            int b = truthTable[i][1];
+            int c = truthTable[i][2];
+            int d = truthTable[i][3];
+
+            int expected = truthTable[i][lastExprCol];
+            int actual = evalSimplified(expr, a, b, c, d);
+
+            if (expected != actual) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Evaluates a simplified Boolean expression in SOP (Sum of Products) form.
+     * Supports: A-D variables, ' for complement, + for OR, juxtaposition for AND.
+     * Example: "A'B+C'D" means (NOT A AND B) OR (NOT C AND D)
+     */
+    private int evalSimplified(String expr, int a, int b, int c, int d) {
+        expr = expr.replace(" ", "");
+        if (expr.equals("1")) return 1;
+        if (expr.equals("0")) return 0;
+
+        String[] terms = splitByPlus(expr);
+        int result = 0;
+        for (int i = 0; i < terms.length; i++) {
+            if (terms[i] == null || terms[i].isEmpty()) continue;
+            int termResult = evalTerm(terms[i], a, b, c, d);
+            if (termResult == 1) result = 1;
+        }
+        return result;
+    }
+
+    private String[] splitByPlus(String expr) {
+        int count = 1;
+        for (int i = 0; i < expr.length(); i++) {
+            if (expr.charAt(i) == '+') count++;
+        }
+        String[] parts = new String[count];
+        int partIdx = 0;
+        int start = 0;
+        for (int i = 0; i <= expr.length(); i++) {
+            if (i == expr.length() || expr.charAt(i) == '+') {
+                parts[partIdx] = expr.substring(start, i);
+                partIdx++;
+                start = i + 1;
+            }
+        }
+        return parts;
+    }
+
+    /**
+     * Evaluates a single product term (AND of literals).
+     * Example: "A'B" means NOT A AND B
+     */
+    private int evalTerm(String term, int a, int b, int c, int d) {
+        int result = 1;
+        int i = 0;
+        while (i < term.length()) {
+            char var = term.charAt(i);
+            boolean complement = false;
+            i++;
+            if (i < term.length() && term.charAt(i) == '\'') {
+                complement = true;
+                i++;
+            }
+
+            int value;
+            if (var == 'A') value = a;
+            else if (var == 'B') value = b;
+            else if (var == 'C') value = c;
+            else if (var == 'D') value = d;
+            else return 0; // Invalid variable
+
+            if (complement) value = (value == 0) ? 1 : 0;
+            if (value == 0) result = 0;
+        }
+        return result;
+    }
+
+    // --- Quine-McCluskey: generate the correct simplified expression ---
+
+    /**
+     * Generates the minimal SOP (Sum of Products) expression for the last
+     * expression column of the truth table using the Quine-McCluskey algorithm.
+     */
+    private String generateSimplifiedExpression() {
+        int lastExprCol = VARIABLE_COLS + expressionCount - 1;
+
+        // Collect minterms (row indices where output = 1)
+        int[] minterms = new int[ROW_COUNT];
+        int mintermCount = 0;
+        for (int i = 0; i < ROW_COUNT; i++) {
+            if (truthTable[i][lastExprCol] == 1) {
+                minterms[mintermCount++] = i;
+            }
+        }
+
+        if (mintermCount == 0) return "0";
+        if (mintermCount == ROW_COUNT) return "1";
+
+        // --- Step 1: Find all prime implicants ---
+        // Each implicant is (value, mask).  mask bits = don't-care positions.
+        // Minterm m is covered iff (m & ~mask) == (value & ~mask).
+        int cap = 200;
+        int[] val = new int[cap];
+        int[] msk = new int[cap];
+        boolean[] used = new boolean[cap];
+        int count = 0;
+
+        for (int i = 0; i < mintermCount; i++) {
+            val[count] = minterms[i];
+            msk[count] = 0;
+            count++;
+        }
+
+        // Combine in rounds until no new implicants are produced
+        int start = 0;
+        int end = count;
+        boolean combined = true;
+
+        while (combined) {
+            combined = false;
+            int newStart = count;
+
+            for (int i = start; i < end; i++) {
+                for (int j = i + 1; j < end; j++) {
+                    if (msk[i] != msk[j]) continue;
+                    int diff = val[i] ^ val[j];
+                    // Differ in exactly one bit?
+                    if (diff != 0 && (diff & (diff - 1)) == 0) {
+                        int nv = val[i] & ~diff;
+                        int nm = msk[i] | diff;
+
+                        // Avoid duplicates in this round
+                        boolean dup = false;
+                        for (int k = newStart; k < count; k++) {
+                            if (val[k] == nv && msk[k] == nm) { dup = true; break; }
+                        }
+
+                        if (!dup && count < cap) {
+                            val[count] = nv;
+                            msk[count] = nm;
+                            used[count] = false;
+                            count++;
+                        }
+
+                        used[i] = true;
+                        used[j] = true;
+                        combined = true;
+                    }
+                }
+            }
+            start = end;
+            end = count;
+        }
+
+        // Collect unique prime implicants (those never combined)
+        int[] pv = new int[cap];
+        int[] pm = new int[cap];
+        int pc = 0;
+
+        for (int i = 0; i < count; i++) {
+            if (used[i]) continue;
+            boolean dup = false;
+            for (int j = 0; j < pc; j++) {
+                if (pv[j] == val[i] && pm[j] == msk[i]) { dup = true; break; }
+            }
+            if (!dup) {
+                pv[pc] = val[i];
+                pm[pc] = msk[i];
+                pc++;
+            }
+        }
+
+        // --- Step 2: Select essential prime implicants + greedy cover ---
+        boolean[] covered = new boolean[16];
+        boolean[] selected = new boolean[pc];
+
+        // Essential: a PI that is the only one covering some minterm
+        for (int mi = 0; mi < mintermCount; mi++) {
+            int m = minterms[mi];
+            int coverBy = -1;
+            int coverCnt = 0;
+            for (int p = 0; p < pc; p++) {
+                if ((m & ~pm[p]) == (pv[p] & ~pm[p])) { coverCnt++; coverBy = p; }
+            }
+            if (coverCnt == 1) selected[coverBy] = true;
+        }
+
+        // Mark minterms covered by essential PIs
+        for (int p = 0; p < pc; p++) {
+            if (!selected[p]) continue;
+            for (int mi = 0; mi < mintermCount; mi++) {
+                int m = minterms[mi];
+                if ((m & ~pm[p]) == (pv[p] & ~pm[p])) covered[m] = true;
+            }
+        }
+
+        // Greedy cover for remaining uncovered minterms
+        for (int mi = 0; mi < mintermCount; mi++) {
+            int m = minterms[mi];
+            if (covered[m]) continue;
+
+            int bestP = -1;
+            int bestCnt = 0;
+            for (int p = 0; p < pc; p++) {
+                if (selected[p]) continue;
+                if ((m & ~pm[p]) != (pv[p] & ~pm[p])) continue;
+                int cnt = 0;
+                for (int mi2 = 0; mi2 < mintermCount; mi2++) {
+                    int m2 = minterms[mi2];
+                    if (!covered[m2] && (m2 & ~pm[p]) == (pv[p] & ~pm[p])) cnt++;
+                }
+                if (cnt > bestCnt) { bestCnt = cnt; bestP = p; }
+            }
+
+            if (bestP >= 0) {
+                selected[bestP] = true;
+                for (int mi2 = 0; mi2 < mintermCount; mi2++) {
+                    int m2 = minterms[mi2];
+                    if ((m2 & ~pm[bestP]) == (pv[bestP] & ~pm[bestP])) covered[m2] = true;
+                }
+            }
+        }
+
+        // --- Step 3: Build SOP string ---
+        StringBuilder expr = new StringBuilder();
+        for (int p = 0; p < pc; p++) {
+            if (!selected[p]) continue;
+            if (expr.length() > 0) expr.append(" + ");
+            expr.append(implicantToString(pv[p], pm[p]));
+        }
+
+        return expr.length() > 0 ? expr.toString() : "0";
+    }
+
+    /**
+     * Converts an implicant (value, mask) pair into a readable term.
+     * A=bit3, B=bit2, C=bit1, D=bit0.  Masked bits are omitted.
+     * A value-bit of 0 produces the complemented variable (e.g. A').
+     */
+    private String implicantToString(int value, int mask) {
+        char[] vars = {'A', 'B', 'C', 'D'};
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < 4; i++) {
+            int bit = 3 - i;
+            if ((mask & (1 << bit)) != 0) continue; // don't-care
+            sb.append(vars[i]);
+            if ((value & (1 << bit)) == 0) sb.append("'");
+        }
+
+        return sb.length() > 0 ? sb.toString() : "1";
     }
 }

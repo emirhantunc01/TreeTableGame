@@ -19,7 +19,7 @@ public class Robot {
 
     private TextAttributes colorTargeted = new TextAttributes(Color.RED, Color.BLACK);
     private TextAttributes colorRandom = new TextAttributes(Color.GREEN, Color.BLACK);
-
+//buraya bakılacak
     public Robot(Console cn, int startX, int startY) {
         this.cn = cn;
         this.x = startX;

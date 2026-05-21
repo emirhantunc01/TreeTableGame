@@ -12,6 +12,7 @@ import java.util.Random;
  */
 public class GameEngine {
     private Console cn;
+    private String playerName; // Player's name for high score table
 
     // --- Game Screens and Components ---
     private Maze maze;
@@ -34,17 +35,52 @@ public class GameEngine {
     private int seconds = 0;
     private int currentScreen = 1; // 1: Maze, 2: Tree, 3: Table
     private boolean isGameOver = false;
+    private boolean treeSubmitted = false; // Flag to prevent re-submitting the same tree
 
     // For keyboard input
-    private int keypr = 0;
+    private volatile int keypr = 0;
+    private volatile char typedChar = 0;
     private Random rnd = new Random();
+    // Name input state (used before main loop)
+    private volatile boolean namingMode = false;
+    private StringBuilder nameBuffer = new StringBuilder();
+    private int nameInputX = 0, nameInputY = 0;
 
     public GameEngine() throws Exception {
         cn = Enigma.getConsole("Tree & Table", 100, 30, 20);
+        setupKeyboardListener();
 
-        // Set up keyboard listener
+        boolean playAgain = true;
+        while (playAgain) {
+            askForPlayerName();
+            initializeGame();
+            run();
+            playAgain = showGameOverScreen();
+        }
+
+        ConsoleUtils.clearScreen(cn);
+        ConsoleUtils.printString(cn, 40, 14, "THANKS FOR PLAYING!");
+    }
+
+    private void setupKeyboardListener() {
         cn.getTextWindow().addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e) {
+                // Handle editing while in namingMode (Backspace / Enter)
+                if (namingMode) {
+                    if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                        if (nameBuffer.length() > 0) {
+                            // remove last char and erase from screen
+                            int pos = nameInputX + nameBuffer.length() - 1;
+                            nameBuffer.deleteCharAt(nameBuffer.length() - 1);
+                            cn.getTextWindow().output(pos, nameInputY, ' ');
+                            cn.getTextWindow().setCursorPosition(pos, nameInputY);
+                        }
+                    } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                        namingMode = false; // finish input
+                    }
+                    return;
+                }
+
                 keypr = e.getKeyCode();
             }
 
@@ -52,8 +88,66 @@ public class GameEngine {
             }
 
             public void keyTyped(KeyEvent e) {
+                // Append printable characters while naming
+                if (namingMode) {
+                    char ch = e.getKeyChar();
+                    if (ch >= 32 && ch != 127 && nameBuffer.length() < 20) {
+                        nameBuffer.append(ch);
+                        int pos = nameInputX + nameBuffer.length() - 1;
+                        cn.getTextWindow().output(pos, nameInputY, ch);
+                        cn.getTextWindow().setCursorPosition(pos + 1, nameInputY);
+                    }
+                } else {
+                    typedChar = e.getKeyChar();
+                }
             }
         });
+    }
+
+    private void askForPlayerName() throws InterruptedException {
+        // Ask for player name at the beginning (centered)
+        ConsoleUtils.clearScreen(cn);
+        String title = "WELCOME TO TREE & TABLE GAME";
+        String prompt = "ENTER YOUR NAME (press Enter for default)";
+        int centerX = (100 - title.length()) / 2;
+        int titleY = 8;
+        ConsoleUtils.printString(cn, centerX, titleY, title);
+        int promptX = (100 - prompt.length()) / 2;
+        int promptY = titleY + 2;
+        ConsoleUtils.printString(cn, promptX, promptY, prompt);
+
+        // Set input position slightly below prompt, centered
+        nameInputY = promptY + 2;
+        nameInputX = (100 - 20) / 2; // allow up to 20 chars
+        cn.getTextWindow().setCursorPosition(nameInputX, nameInputY);
+        namingMode = true;
+        nameBuffer.setLength(0);
+        // Wait until user finishes typing (Enter sets namingMode=false)
+        while (namingMode) {
+            Thread.sleep(30);
+        }
+        playerName = nameBuffer.toString().trim();
+        if (playerName.isEmpty()) playerName = "Player";
+        // Show chosen name briefly
+        ConsoleUtils.printString(cn, nameInputX, nameInputY, playerName + "                    ");
+        Thread.sleep(800);
+        ConsoleUtils.clearScreen(cn);
+    }
+
+    private void initializeGame() throws Exception {
+        items = new Item[100];
+        itemCount = 0;
+        robots = new Robot[50];
+        robotCount = 0;
+
+        timeUnit = 0;
+        seconds = 0;
+        currentScreen = 1;
+        isGameOver = false;
+        treeSubmitted = false;
+        needsRedraw = false;
+        tableScreen = null;
+        keypr = 0;
 
         // Initialize components
         maze = Maze.loadFromFile("maze.txt");
@@ -69,48 +163,54 @@ public class GameEngine {
         for (int i = 0; i < 10; i++) {
             insertElementFromQueue();
         }
-
-        // Start the main game loop
-        run();
     }
+
+    // (name input handled interactively using KeyListener before main loop)
 
     private void run() throws InterruptedException {
         while (!isGameOver) {
 
-            // Screen switching keys (1, 2, 3)
-            if (keypr == KeyEvent.VK_1) {
-                currentScreen = 1;
-                ConsoleUtils.clearScreen(cn);
-                needsRedraw = true;
-                keypr = 0;
-            }
-            if (keypr == KeyEvent.VK_2) {
-                currentScreen = 2;
-                ConsoleUtils.clearScreen(cn);
-                keypr = 0;
-            }
-            if (keypr == KeyEvent.VK_3) {
-                currentScreen = 3;
-                ConsoleUtils.clearScreen(cn);
-                keypr = 0;
+            // Capture key press once per iteration to prevent race conditions
+            // between the AWT KeyListener thread and the game loop thread
+            int key = keypr;
+            keypr = 0;
+            char ch = typedChar;
+            typedChar = 0;
+
+            // Screen switching keys (1, 2, 3) - ONLY active outside Table Screen or if Table Screen is not initialized
+            if (currentScreen != 3 || tableScreen == null) {
+                if (key == KeyEvent.VK_1) {
+                    currentScreen = 1;
+                    ConsoleUtils.clearScreen(cn);
+                    needsRedraw = true;
+                    key = 0;
+                }
+                if (key == KeyEvent.VK_2) {
+                    currentScreen = 2;
+                    ConsoleUtils.clearScreen(cn);
+                    key = 0;
+                }
+                if (key == KeyEvent.VK_3) {
+                    currentScreen = 3;
+                    ConsoleUtils.clearScreen(cn);
+                    key = 0;
+                }
             }
 
             if (currentScreen == 1) {
-                updateMazeScreen();
+                updateMazeScreen(key);
                 Thread.sleep(100); // 1 Time Unit = 100 ms
             } else if (currentScreen == 2) {
-                updateTreeScreen();
-                Thread.sleep(100); // Tree screen doesn't advance time, but waits for input
+                updateTreeScreen(key);
+                Thread.sleep(100);
             } else if (currentScreen == 3) {
-                updateTableScreen();
+                updateTableScreen(key, ch);
                 Thread.sleep(100);
             }
         }
+    }
 
-        // Game Over Screen (High Score Table will be called)
-        ConsoleUtils.clearScreen(cn);
-        ConsoleUtils.printString(cn, 40, 15, "GAME OVER!");
-        ConsoleUtils.printString(cn, 35, 17, "Final Score: " + player.getScore());
+    private boolean showGameOverScreen() throws InterruptedException {
         // Game Over Screen
         ConsoleUtils.clearScreen(cn);
         ConsoleUtils.printString(cn, 40, 10, "GAME OVER!");
@@ -120,17 +220,35 @@ public class GameEngine {
         DoublyLinkedList highScoreTable = new DoublyLinkedList();
         highScoreTable.loadFromFile("highscore.txt");
 
-        // Add player's score to the list (name is "Player1" for now)
-        highScoreTable.insert("Player1", player.getScore());
+        // Add player's score to the list with their name
+        highScoreTable.insert(playerName, player.getScore());
+
+        // Save updated high score table to file
+        highScoreTable.saveToFile("highscore.txt");
 
         // Draw the table to the screen
         highScoreTable.display(cn, 35, 15);
+
+        ConsoleUtils.printString(cn, 31, 27, "[ P ] PLAY AGAIN      [ ESC ] EXIT");
+        keypr = 0;
+
+        while (true) {
+            if (keypr == KeyEvent.VK_P || keypr == KeyEvent.VK_ENTER) {
+                keypr = 0;
+                return true;
+            }
+            if (keypr == KeyEvent.VK_ESCAPE) {
+                keypr = 0;
+                return false;
+            }
+            Thread.sleep(50);
+        }
     }
 
     // ==========================================
     // MAZE SCREEN LOGIC
     // ==========================================
-    private void updateMazeScreen() {
+    private void updateMazeScreen(int key) {
         timeUnit++;
         if (timeUnit % 10 == 0) seconds++; // Every 10 units = 1 second (1000ms)
 
@@ -143,19 +261,18 @@ public class GameEngine {
         }
 
         // 2. Player Movement and Input (every 1 time unit)
-        if (keypr != 0) {
-            if (keypr == KeyEvent.VK_SPACE) {
+        if (key != 0) {
+            if (key == KeyEvent.VK_SPACE) {
                 // Fire fireball
                 fireballManager.fire(player.getX(), player.getY(), player.getLastDx(), player.getLastDy());
-            } else if (keypr == KeyEvent.VK_M) {
+            } else if (key == KeyEvent.VK_M) {
                 // Toggle Storage Mode
                 player.toggleStorageMode();
             } else {
                 // Arrow Keys
-                player.move(keypr);
+                player.move(key);
                 checkItemCollection();
             }
-            keypr = 0;
         }
         player.draw(); // Keep player always on top
 
@@ -191,14 +308,16 @@ public class GameEngine {
     // ==========================================
     // TREE SCREEN LOGIC
     // ==========================================
-    private void updateTreeScreen() {
+    private void updateTreeScreen(int key) {
         treeScreen.draw();
         drawBackpackOnTreeScreen(); // Show backpack contents
+        // Draw HUD on tree screen (Input Queue is only for Maze mode)
+        drawHUD();
 
-        if (keypr != 0) {
-            if (keypr == KeyEvent.VK_W || keypr == KeyEvent.VK_A || keypr == KeyEvent.VK_D) {
-                if (treeScreen.moveCursor((char) keypr)) player.addScore(-1); // Penalty point
-            } else if (keypr == KeyEvent.VK_T) {
+        if (key != 0) {
+            if (key == KeyEvent.VK_W || key == KeyEvent.VK_A || key == KeyEvent.VK_D) {
+                if (treeScreen.moveCursor((char) key)) player.addScore(-1); // Penalty point
+            } else if (key == KeyEvent.VK_T) {
                 // Take last item from Backpack and place it into the tree
                 if (player.getBackpackCount() > 0) {
                     char symbol = player.removeFromBackpack(player.getBackpackCount() - 1);
@@ -207,7 +326,7 @@ public class GameEngine {
                         player.addToBackpack(symbol);
                     }
                 }
-            } else if (keypr == KeyEvent.VK_R) {
+            } else if (key == KeyEvent.VK_R) {
                 // Remove from tree and put in backpack
                 char c = treeScreen.takeSymbol();
                 if (c != ' ') {
@@ -217,42 +336,46 @@ public class GameEngine {
                         treeScreen.placeSymbol(c);
                     }
                 }
-            } else if (keypr == KeyEvent.VK_F) {
+            } else if (key == KeyEvent.VK_F) {
                 if (treeScreen.finishTree()) {
                     int treeScore = treeScreen.calculateTreeScore();
                     player.addScore(treeScore);
+                    treeSubmitted = true; // Mark tree as submitted to prevent re-submission
                     // Create and initialize the TableScreen
-                    tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore);
+                    tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore,
+                            treeScreen.getTableExpressionPostfixes(), treeScreen.getTableExpressionHeaders());
                     tableScreen.init();
                     currentScreen = 3; // Switch to Table Screen
                 } else {
                     player.addScore(-10); // Penalty for invalid tree
                 }
             }
-            keypr = 0;
         }
     }
 
     // ==========================================
     // TABLE SCREEN LOGIC
     // ==========================================
-    private void updateTableScreen() {
+    private void updateTableScreen(int key, char ch) {
         if (tableScreen == null) {
             // Pressed 3 directly before the tree was completed
             ConsoleUtils.printString(cn, 5, 5, "No expression tree submitted.");
             ConsoleUtils.printString(cn, 5, 7, "Press 2 to go to Tree Screen first.");
-            if (keypr != 0) keypr = 0;
             return;
         }
 
         // Update TableScreen; return to Maze if completed
-        if (tableScreen.update(keypr, player)) {
+        if (tableScreen.update(key, ch, player)) {
             currentScreen = 1;
             needsRedraw = true;
             ConsoleUtils.clearScreen(cn);
             tableScreen = null; // Reset for the next round
+            
+            // Reset tree and backpack for the next round
+            treeScreen.resetTree();
+            treeSubmitted = false;
+            player.clearBackpack();
         }
-        keypr = 0;
     }
 
     // ==========================================
@@ -299,7 +422,7 @@ public class GameEngine {
     }
 
     // Checks whether the player stepped on an item
-    // Düzeltilmiş checkItemCollection() metodu:
+    // Checks whether the player stepped on an item and collects it:
     private void checkItemCollection() {
         for (int i = 0; i < itemCount; i++) {
             if (items[i].getType() != ' ' &&

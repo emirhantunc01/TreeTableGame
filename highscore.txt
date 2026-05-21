@@ -1,0 +1,5 @@
+emirhan 360
+Player 150
+emir 70
+enirhan -3
+22 -10

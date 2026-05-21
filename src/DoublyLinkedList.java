@@ -19,6 +19,14 @@ public class DoublyLinkedList {
 
     // Inserts score in descending order at the appropriate position
     public void insert(String name, int score) {
+        ScoreNode existing = findNodeByName(name);
+        if (existing != null) {
+            if (score <= existing.getScore()) {
+                return;
+            }
+            removeNode(existing);
+        }
+
         ScoreNode newNode = new ScoreNode(name, score);
 
         // If the list is empty
@@ -53,6 +61,37 @@ public class DoublyLinkedList {
         newNode.setPrev(current);
     }
 
+    private ScoreNode findNodeByName(String name) {
+        ScoreNode current = head;
+        while (current != null) {
+            if (current.getName().equals(name)) {
+                return current;
+            }
+            current = current.getNext();
+        }
+        return null;
+    }
+
+    private void removeNode(ScoreNode node) {
+        ScoreNode previous = node.getPrev();
+        ScoreNode next = node.getNext();
+
+        if (previous != null) {
+            previous.setNext(next);
+        } else {
+            head = next;
+        }
+
+        if (next != null) {
+            next.setPrev(previous);
+        } else {
+            tail = previous;
+        }
+
+        node.setPrev(null);
+        node.setNext(null);
+    }
+
     // Loads data from "highscore.txt"
     public void loadFromFile(String filename) {
         try {
@@ -70,11 +109,10 @@ public class DoublyLinkedList {
             }
             br.close();
         } catch (Exception e) {
-            // If file doesn't exist or can't be read, create a default list
-            insert("Irmak Yol", 412);
-            insert("Tarkan Bulut", 728);
-            insert("Ali Deniz", 56);
-            insert("Deniz Toprak", 190);
+            // If the file doesn't exist or can't be read, start with an empty list.
+            // Previously default entries were inserted here; removed so highscore
+            // reflects actual saved data. Leave the list empty and let the game
+            // create/append entries on game over.
         }
     }
 
@@ -90,6 +128,21 @@ public class DoublyLinkedList {
             String line = String.format("%-15s %5d", current.getName(), current.getScore());
             ConsoleUtils.printString(cn, startX, y++, line);
             current = current.getNext();
+        }
+    }
+
+    // Saves the list back to "highscore.txt" in descending order
+    public void saveToFile(String filename) {
+        try {
+            PrintWriter pw = new PrintWriter(new FileWriter(filename));
+            ScoreNode current = head;
+            while (current != null) {
+                pw.println(current.getName() + " " + current.getScore());
+                current = current.getNext();
+            }
+            pw.close();
+        } catch (Exception e) {
+            System.out.println("Could not save high score file: " + e.getMessage());
         }
     }
 }

@@ -87,6 +87,17 @@ public class ExpressionTree {
         return false; // Slot is full
     }
 
+    public boolean placeSymbolInFirstEmptySlot(char symbol) {
+        for (int i = 1; i <= 31; i++) {
+            if (tree[i] == ' ') {
+                tree[i] = symbol;
+                autoMoveCursor();
+                return true;
+            }
+        }
+        return false; // Tree is full
+    }
+
     public char takeSymbol() {
         char symbol = tree[cursor];
         if (symbol != ' ') {
@@ -102,27 +113,59 @@ public class ExpressionTree {
     // Returns false on invalid tree (-10 point), true on valid tree (proceeds to Table Screen)
     public boolean finishTree() {
         int varCount = 0;
-        int maxIndex = 0;
+        boolean hasDepth3Node = false;
+
+        // Rule: Root cannot be empty
+        if (tree[1] == ' ') return false;
 
         for (int i = 1; i <= 31; i++) {
             char c = tree[i];
             if (c != ' ') {
-                maxIndex = i;
-                if (c == 'A' || c == 'B' || c == 'C' || c == 'D' ||
-                        c == 'a' || c == 'b' || c == 'c' || c == 'd') {
+                if (i >= 4) hasDepth3Node = true;
+                
+                // Rule: All nodes must be connected to the root (no floating subtrees)
+                if (i > 1 && tree[i / 2] == ' ') return false;
+
+                if (isVariable(c)) {
                     varCount++;
+                    // Variables MUST be leaves (no children)
+                    if (hasChild(i)) return false;
+                } else if (c == '~') {
+                    // Unary operator MUST have exactly 1 child
+                    if (!hasExactlyOneChild(i)) return false;
+                } else if (isOperator(c)) {
+                    // Binary operators MUST have exactly 2 children
+                    if (!hasExactlyTwoChildren(i)) return false;
+                } else {
+                    return false; // Unknown character
                 }
             }
         }
 
-        // Kural 1: Minimum 3 variables
+        // Rule 1: Minimum 3 variables
         if (varCount < 3) return false;
 
-        // Kural 2: Minimum depth is 3. 
-        // Depth 3 means we must have at least one node in indices 4 to 7.
-        if (maxIndex < 4) return false;
+        // Rule 2: Minimum depth is 3.
+        if (!hasDepth3Node) return false;
 
         return true;
+    }
+
+    private boolean hasExactlyOneChild(int index) {
+        boolean hasLeft = index * 2 <= 31 && tree[index * 2] != ' ';
+        boolean hasRight = index * 2 + 1 <= 31 && tree[index * 2 + 1] != ' ';
+        return (hasLeft && !hasRight) || (!hasLeft && hasRight);
+    }
+
+    private boolean hasExactlyTwoChildren(int index) {
+        boolean hasLeft = index * 2 <= 31 && tree[index * 2] != ' ';
+        boolean hasRight = index * 2 + 1 <= 31 && tree[index * 2 + 1] != ' ';
+        return hasLeft && hasRight;
+    }
+
+    private boolean isVariable(char c) {
+        return c == 'A' || c == 'B' || c == 'C' || c == 'D' ||
+               c == 'a' || c == 'b' || c == 'c' || c == 'd';
     }
 
     // Calculates the tree's score (node count * 10)
@@ -134,7 +177,7 @@ public class ExpressionTree {
         return count * 10;
     }
 
-    // --- INFIX VE POSTFIX YAZDIRMA ---
+    // --- INFIX AND POSTFIX STRING BUILDERS ---
 
     public String getInfix() {
         return buildInfix(1);
@@ -143,10 +186,13 @@ public class ExpressionTree {
     private String buildInfix(int index) {
         if (index > 31 || tree[index] == ' ') return "";
 
-        boolean isLeaf = (index * 2 > 31 || (tree[index * 2] == ' ' && tree[index * 2 + 1] == ' '));
+        boolean isLeaf = !hasChild(index);
 
         if (isLeaf) {
             return String.valueOf(tree[index]);
+        } else if (tree[index] == '~') {
+            String operand = buildInfix(firstChildIndex(index));
+            return "~(" + operand + ")";
         } else {
             String left = buildInfix(index * 2);
             String right = buildInfix(index * 2 + 1);
@@ -172,6 +218,95 @@ public class ExpressionTree {
         return result;
     }
 
+    /**
+     * Gets all non-empty sub-expressions' postfix forms (sorted by node index)
+     * Returns array where index i contains the postfix of the subtree rooted at node i
+     */
+    public String[] getAllSubexpressionsPostfix() {
+        String[] subexpressions = new String[32]; // Index 0 unused, 1-31 for nodes
+        for (int i = 1; i <= 31; i++) {
+            if (tree[i] != ' ') {
+                subexpressions[i] = buildPostfix(i);
+            } else {
+                subexpressions[i] = "";
+            }
+        }
+        return subexpressions;
+    }
+
+    public String[] getTableExpressionPostfixes() {
+        String[] expressions = new String[32];
+        collectTableExpressionPostfixes(1, expressions, new int[] {0});
+        return expressions;
+    }
+
+    public String[] getTableExpressionHeaders() {
+        String[] expressions = new String[32];
+        collectTableExpressionHeaders(1, expressions, new int[] {0});
+        return expressions;
+    }
+
+    private void collectTableExpressionPostfixes(int index, String[] expressions, int[] count) {
+        if (index > 31 || tree[index] == ' ') return;
+
+        collectTableExpressionPostfixes(index * 2, expressions, count);
+        collectTableExpressionPostfixes(index * 2 + 1, expressions, count);
+
+        if (isOperator(tree[index]) && count[0] < expressions.length) {
+            expressions[count[0]] = buildPostfix(index);
+            count[0]++;
+        }
+    }
+
+    private void collectTableExpressionHeaders(int index, String[] expressions, int[] count) {
+        if (index > 31 || tree[index] == ' ') return;
+
+        collectTableExpressionHeaders(index * 2, expressions, count);
+        collectTableExpressionHeaders(index * 2 + 1, expressions, count);
+
+        if (isOperator(tree[index]) && count[0] < expressions.length) {
+            expressions[count[0]] = buildCompactInfix(index);
+            count[0]++;
+        }
+    }
+
+    private String buildCompactInfix(int index) {
+        if (index > 31 || tree[index] == ' ') return "";
+        if (!hasChild(index)) return String.valueOf(tree[index]);
+
+        char op = tree[index];
+        if (op == '~') {
+            return "~(" + buildCompactInfix(firstChildIndex(index)) + ")";
+        }
+
+        String left = buildCompactInfix(index * 2);
+        String right = buildCompactInfix(index * 2 + 1);
+
+        if (isExpressionNode(index * 2)) left = "(" + left + ")";
+        if (isExpressionNode(index * 2 + 1)) right = "(" + right + ")";
+
+        return left + op + right;
+    }
+
+    private boolean hasChild(int index) {
+        boolean hasLeft = index * 2 <= 31 && tree[index * 2] != ' ';
+        boolean hasRight = index * 2 + 1 <= 31 && tree[index * 2 + 1] != ' ';
+        return hasLeft || hasRight;
+    }
+
+    private int firstChildIndex(int index) {
+        if (index * 2 <= 31 && tree[index * 2] != ' ') return index * 2;
+        return index * 2 + 1;
+    }
+
+    private boolean isExpressionNode(int index) {
+        return index <= 31 && tree[index] != ' ' && isOperator(tree[index]);
+    }
+
+    private boolean isOperator(char c) {
+        return c == '~' || c == '^' || c == 'v' || c == '+' || c == '>' || c == '=';
+    }
+
     // --- DRAW TO SCREEN ---
 
     public void draw() {
@@ -192,5 +327,13 @@ public class ExpressionTree {
         // Print Infix and Postfix expressions at the bottom
         ConsoleUtils.printString(cn, 2, 20, "Infix   : " + getInfix());
         ConsoleUtils.printString(cn, 2, 21, "Postfix : " + getPostfix());
+    }
+
+    // Resets the tree to initial state (all empty slots)
+    public void resetTree() {
+        for (int i = 1; i <= 31; i++) {
+            tree[i] = ' ';
+        }
+        cursor = 1;
     }
 }

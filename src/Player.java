@@ -110,9 +110,9 @@ public class Player {
             return true;
         }
 
-        // if backpack full adds symbols to tree automaticlly
+        // if backpack is full, add symbols to the first empty tree slot automatically
         if (tree != null) {
-            return tree.placeSymbol(symbol);
+            return tree.placeSymbolInFirstEmptySlot(symbol);
         }
 
         return false;
@@ -169,5 +169,13 @@ public class Player {
             return true;
         }
         return false; // Backpack is full
+    }
+
+    // Clears the backpack (empties all items)
+    public void clearBackpack() {
+        for (int i = 0; i < backpack.length; i++) {
+            backpack[i] = ' ';
+        }
+        backpackCount = 0;
     }
 }

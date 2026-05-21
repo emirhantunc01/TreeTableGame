@@ -32,11 +32,20 @@ public class Fireball {
     public boolean fire(int startX, int startY, int dx, int dy) {
         if (packedCount <= 0 || (dx == 0 && dy == 0)) return false;
 
+        int spawnX = startX + dx;
+        int spawnY = startY + dy;
+
+        // If the immediate spawn block is a wall or out of bounds, the fireball hits it instantly.
+        if (spawnX < 0 || spawnX >= Maze.COLS || spawnY < 0 || spawnY >= Maze.ROWS || Maze.map[spawnY][spawnX] == '#') {
+            packedCount--; // Consume ammo
+            return true;
+        }
+
         // Find an empty fireball slot
         for (int i = 0; i < MAX_FIREBALLS; i++) {
             if (!active[i]) {
-                fbX[i] = startX + dx;
-                fbY[i] = startY + dy;
+                fbX[i] = spawnX;
+                fbY[i] = spawnY;
                 fbDx[i] = dx;
                 fbDy[i] = dy;
                 active[i] = true;
@@ -51,18 +60,24 @@ public class Fireball {
     public void update(Robot[] robots, int robotCount, Player p,  Item[] items, int itemCount) {
         for (int i = 0; i < MAX_FIREBALLS; i++) {
             if (active[i]) {
-                // Erase old position
-                cn.getTextWindow().output(fbX[i], fbY[i], ' ');
-
                 // Advance
                 fbX[i] += fbDx[i];
                 fbY[i] += fbDy[i];
 
-                // Boundary and wall collision check (cannot pass through objects)
+                // Boundary and wall collision check FIRST (cannot pass through objects)
+                // Don't erase old position if we hit a wall!
                 if (fbX[i] < 0 || fbX[i] >= Maze.COLS || fbY[i] < 0 || fbY[i] >= Maze.ROWS || Maze.map[fbY[i]][fbX[i]] == '#') {
+                    fbX[i] -= fbDx[i];  // Step back to previous position
+                    fbY[i] -= fbDy[i];
+                    cn.getTextWindow().output(fbX[i], fbY[i], ' ');  // Erase at safe position
                     active[i] = false;
                     continue;
                 }
+                
+                // Safe to erase old position now
+                int oldX = fbX[i] - fbDx[i];
+                int oldY = fbY[i] - fbDy[i];
+                cn.getTextWindow().output(oldX, oldY, ' ');
 
                 // Robot collision check
                 for (int j = 0; j < robotCount; j++) {

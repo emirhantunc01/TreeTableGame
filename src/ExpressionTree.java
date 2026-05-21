@@ -155,10 +155,13 @@ public class ExpressionTree {
     private String buildInfix(int index) {
         if (index > 31 || tree[index] == ' ') return "";
 
-        boolean isLeaf = (index * 2 > 31 || (tree[index * 2] == ' ' && tree[index * 2 + 1] == ' '));
+        boolean isLeaf = !hasChild(index);
 
         if (isLeaf) {
             return String.valueOf(tree[index]);
+        } else if (tree[index] == '~') {
+            String operand = buildInfix(firstChildIndex(index));
+            return "~(" + operand + ")";
         } else {
             String left = buildInfix(index * 2);
             String right = buildInfix(index * 2 + 1);
@@ -198,6 +201,79 @@ public class ExpressionTree {
             }
         }
         return subexpressions;
+    }
+
+    public String[] getTableExpressionPostfixes() {
+        String[] expressions = new String[32];
+        collectTableExpressionPostfixes(1, expressions, new int[] {0});
+        return expressions;
+    }
+
+    public String[] getTableExpressionHeaders() {
+        String[] expressions = new String[32];
+        collectTableExpressionHeaders(1, expressions, new int[] {0});
+        return expressions;
+    }
+
+    private void collectTableExpressionPostfixes(int index, String[] expressions, int[] count) {
+        if (index > 31 || tree[index] == ' ') return;
+
+        collectTableExpressionPostfixes(index * 2, expressions, count);
+        collectTableExpressionPostfixes(index * 2 + 1, expressions, count);
+
+        if (isOperator(tree[index]) && count[0] < expressions.length) {
+            expressions[count[0]] = buildPostfix(index);
+            count[0]++;
+        }
+    }
+
+    private void collectTableExpressionHeaders(int index, String[] expressions, int[] count) {
+        if (index > 31 || tree[index] == ' ') return;
+
+        collectTableExpressionHeaders(index * 2, expressions, count);
+        collectTableExpressionHeaders(index * 2 + 1, expressions, count);
+
+        if (isOperator(tree[index]) && count[0] < expressions.length) {
+            expressions[count[0]] = buildCompactInfix(index);
+            count[0]++;
+        }
+    }
+
+    private String buildCompactInfix(int index) {
+        if (index > 31 || tree[index] == ' ') return "";
+        if (!hasChild(index)) return String.valueOf(tree[index]);
+
+        char op = tree[index];
+        if (op == '~') {
+            return "~(" + buildCompactInfix(firstChildIndex(index)) + ")";
+        }
+
+        String left = buildCompactInfix(index * 2);
+        String right = buildCompactInfix(index * 2 + 1);
+
+        if (isExpressionNode(index * 2)) left = "(" + left + ")";
+        if (isExpressionNode(index * 2 + 1)) right = "(" + right + ")";
+
+        return left + op + right;
+    }
+
+    private boolean hasChild(int index) {
+        boolean hasLeft = index * 2 <= 31 && tree[index * 2] != ' ';
+        boolean hasRight = index * 2 + 1 <= 31 && tree[index * 2 + 1] != ' ';
+        return hasLeft || hasRight;
+    }
+
+    private int firstChildIndex(int index) {
+        if (index * 2 <= 31 && tree[index * 2] != ' ') return index * 2;
+        return index * 2 + 1;
+    }
+
+    private boolean isExpressionNode(int index) {
+        return index <= 31 && tree[index] != ' ' && isOperator(tree[index]);
+    }
+
+    private boolean isOperator(char c) {
+        return c == '~' || c == '^' || c == 'v' || c == '+' || c == '>' || c == '=';
     }
 
     // --- DRAW TO SCREEN ---

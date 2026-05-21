@@ -37,9 +37,11 @@ public class InputQueue {
         rear = -1;
         front = 0;
 
-        // Fill the queue completely at game start
+        // Fill the queue completely at game start.
+        // Avoid calling overridable queue methods from the constructor.
         for (int i = 0; i < QUEUE_CAPACITY; i++) {
-            enqueue(generateRandomElement());
+            rear = i;
+            elements[rear] = generateRandomElement();
         }
     }
 

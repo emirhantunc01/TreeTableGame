@@ -342,7 +342,12 @@ public class GameEngine {
                     player.addScore(treeScore);
                     treeSubmitted = true; // Mark tree as submitted to prevent re-submission
                     // Create and initialize the TableScreen with all sub-expressions
-                    tableScreen = new TableScreen(cn, treeScreen.getPostfix(), treeScore, treeScreen.getAllSubexpressionsPostfix());
+                    tableScreen = new TableScreen(
+                            cn,
+                            treeScreen.getPostfix(),
+                            treeScore,
+                            treeScreen.getTableExpressionPostfixes(),
+                            treeScreen.getTableExpressionHeaders());
                     tableScreen.init();
                     currentScreen = 3; // Switch to Table Screen
                 } else {

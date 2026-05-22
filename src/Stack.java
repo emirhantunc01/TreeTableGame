@@ -4,50 +4,50 @@
  */
 public class Stack {
     private int top;
-    private Object[] elements; // [cite: 1330]
+    private Object[] elements;
 
     public Stack(int capacity) {
-        elements = new Object[capacity]; // [cite: 1332]
-        top = -1; // [cite: 1333]
+        elements = new Object[capacity];
+        top = -1;
     }
 
     public void push(Object data) {
         if (isFull())
-            System.out.println("Stack overflow"); // [cite: 1337]
+            System.out.println("Stack overflow");
         else {
-            top++; // [cite: 1339]
-            elements[top] = data; // [cite: 1340]
+            top++;
+            elements[top] = data;
         }
     }
 
     public Object pop() {
         if (isEmpty()) {
-            System.out.println("Stack is empty"); // [cite: 1346]
-            return null; // [cite: 1347]
+            System.out.println("Stack is empty");
+            return null;
         } else {
-            Object retData = elements[top]; // [cite: 1351]
-            top--; // [cite: 1351]
-            return retData; // [cite: 1354]
+            Object retData = elements[top];
+            top--;
+            return retData;
         }
     }
 
     public Object peek() {
         if (isEmpty()) {
-            System.out.println("Stack is empty"); // [cite: 1361]
-            return null; // [cite: 1362]
+            System.out.println("Stack is empty");
+            return null;
         } else
-            return elements[top]; // [cite: 1365]
+            return elements[top];
     }
 
     public boolean isEmpty() {
-        return (top == -1); // [cite: 1368]
+        return (top == -1);
     }
 
     public boolean isFull() {
-        return (top + 1 == elements.length); // [cite: 1372]
+        return (top + 1 == elements.length);
     }
 
     public int size() {
-        return top + 1; // [cite: 1374]
+        return top + 1;
     }
 }
